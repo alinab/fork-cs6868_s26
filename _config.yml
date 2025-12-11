@@ -1,10 +1,10 @@
 # Site settings
-title: CS3100 Monsoon 2025
-subtitle: Paradigms of Programming
-baseurl: "/cs3100_m25" # the subpath of your site, e.g. /blog/
+title: CS6868 Spring 2026
+subtitle: Concurrent Programming
+baseurl: "/cs6868_s26" # the subpath of your site, e.g. /blog/
 url: "http://kayceesrk.github.io" # the base hostname & protocol for your site
 syllabus: "http://www.cse.iitm.ac.in/course_details.php?arg=MTk="
-githubdir: "kayceesrk/cs3100_m25"
+githubdir: "kayceesrk/cs6868_s26"
 
 # Author/user information
 email: kcsrk@iitm.ac.in
