@@ -1,0 +1,19 @@
+(executable
+ (name LockOne)
+ (libraries unix)
+ (modes exe))
+
+(executable
+ (name LockTwo)
+ (libraries unix)
+ (modes exe))
+
+(executable
+ (name Peterson)
+ (libraries unix)
+ (modes exe))
+
+(executable
+ (name Bakery)
+ (libraries unix)
+ (modes exe))

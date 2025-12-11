@@ -5,7 +5,7 @@ permalink: /assignments/
 ---
 
 | Assignment   | Due Date |
-|:------------:|----------| 
+|:------------:|----------|
 
 <br>
 
