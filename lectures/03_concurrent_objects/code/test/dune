@@ -9,11 +9,16 @@
  (libraries concurrent_queues))
 
 (executable
- (name qcheck_lockfree)
- (modules qcheck_lockfree)
+ (name qcheck_lin_lockfree)
+ (modules qcheck_lin_lockfree)
  (libraries concurrent_queues qcheck-lin.domain))
 
 (executable
- (name qcheck_bounded)
- (modules qcheck_bounded)
+ (name qcheck_lin_bounded)
+ (modules qcheck_lin_bounded)
  (libraries concurrent_queues qcheck-lin.domain))
+
+(executable
+ (name qcheck_stm_lockfree)
+ (modules qcheck_stm_lockfree)
+ (libraries concurrent_queues qcheck-stm.sequential qcheck-stm.domain qcheck-multicoretests-util))

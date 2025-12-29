@@ -34,15 +34,23 @@ OCaml 5 implementations of concurrent queue data structures from "The Art of Mul
 
 ### QCheck-Lin Tests (`test/`)
 
-- **qcheck_bounded.ml** - Linearizability test of bounded queue
+- **qcheck_lin_bounded.ml** - Linearizability test of bounded queue
   - Uses QCheck-Lin to systematically test linearizability
   - Runs 1000 random concurrent scenarios
   - Should pass: all executions are linearizable ✓
 
-- **qcheck_lockfree.ml** - Linearizability test of lock-free queue
+- **qcheck_lin_lockfree.ml** - Linearizability test of lock-free queue
   - Uses QCheck-Lin to find linearizability violations
   - Should fail: finds minimal counterexamples ✗
   - Demonstrates why the queue is unsafe for MWMR
+
+### QCheck-STM Tests (`test/`)
+
+- **qcheck_stm_lockfree.ml** - State Machine Testing of lock-free queue
+  - Uses QCheck-STM to test against a sequential model
+  - Separates producer (Enq) and consumer (Deq) commands for SWSR
+  - Runs both sequential and parallel tests
+  - Should pass: respects SWSR constraint ✓
 
 ## Building and Running
 
@@ -55,16 +63,19 @@ dune exec test/test_bounded.exe
 dune exec test/test_lockfree.exe
 
 # Run QCheck-Lin linearizability tests
-dune exec test/qcheck_bounded.exe    # Should pass
-dune exec test/qcheck_lockfree.exe   # Should fail with counterexample
+dune exec test/qcheck_lin_bounded.exe    # Should pass
+dune exec test/qcheck_lin_lockfree.exe   # Should fail with counterexample
+
+# Run QCheck-STM state machine tests
+dune exec test/qcheck_stm_lockfree.exe   # Should pass (SWSR only)
 ```
 
 ## Dependencies
 
-Install QCheck-Lin for linearizability testing:
+Install QCheck-Lin and QCheck-STM for testing:
 
 ```bash
-opam install qcheck-lin
+opam install qcheck-lin qcheck-stm
 ```
 
 ## Key Concepts
@@ -93,6 +104,13 @@ Multiple readers racing on `head` updates can:
 - **Minimal counterexamples**: Shrinks failures to simplest case
 - **Formal verification**: Tests linearizability property
 - **Automatic**: No need to manually design test cases
+
+### QCheck-STM Advantages
+
+- **Model-based testing**: Compares implementation against abstract model
+- **State machine verification**: Tests state transitions are correct
+- **Domain separation**: Can test SWSR by separating producer/consumer commands
+- **Sequential + Parallel**: Tests both sequential consistency and parallel correctness
 
 ## References
 
