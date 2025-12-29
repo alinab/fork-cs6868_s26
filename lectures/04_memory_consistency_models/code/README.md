@@ -119,3 +119,68 @@ Final counter value: 20000 (expected: 20000)
 ```
 
 Despite the data races, the counter reaches the correct value, demonstrating that Peterson's lock provides mutual exclusion even though it violates OCaml's data-race-free guarantee.
+
+---
+
+## 3. Peterson's Lock with Atomics (`peterson_race_fixed.ml`)
+
+Demonstrates a corrected implementation of Peterson's lock using `Atomic` operations, which eliminates the data races while maintaining correct mutual exclusion.
+
+### Key Changes from `peterson_race.ml`
+
+- Uses `Atomic.make`, `Atomic.get`, and `Atomic.set` instead of refs and arrays
+- Atomic operations establish proper happens-before relationships
+- No data races according to OCaml's memory model
+- Still provides correct mutual exclusion
+
+### Source Code Structure
+
+```ocaml
+module Peterson = struct
+  let flag = [| Atomic.make false; Atomic.make false |]  (* Atomic locations *)
+  let victim = Atomic.make 0                              (* Atomic location *)
+
+  let lock () =
+    let i = (Domain.self () :> int) - 1 in
+    let j = 1 - i in
+    Atomic.set flag.(i) true;    (* Atomic write *)
+    Atomic.set victim i;         (* Atomic write *)
+    (* Atomic reads establish synchronization *)
+    while Atomic.get flag.(j) && Atomic.get victim = i do
+      ()
+    done
+
+  let unlock () =
+    let i = (Domain.self () :> int) - 1 in
+    Atomic.set flag.(i) false    (* Atomic write *)
+end
+```
+
+### Building and Running
+
+```bash
+# Build with TSAN-enabled compiler
+dune build peterson_race_fixed.exe
+
+# Run the program
+dune exec ./peterson_race_fixed.exe
+```
+
+### Expected Output
+
+```text
+Testing Peterson's lock with 10000 iterations per domain...
+Final counter value: 20000 (expected: 20000)
+```
+
+**No TSAN warnings** - the program completes successfully with no data race reports, demonstrating that atomic operations properly synchronize the domains.
+
+### Comparison with `peterson_race.ml`
+
+| Aspect | `peterson_race.ml` | `peterson_race_fixed.ml` |
+|--------|-------------------|-------------------------|
+| **Synchronization primitives** | refs/arrays | `Atomic` operations |
+| **Data races (OCaml model)** | Yes | No |
+| **TSAN warnings** | Multiple warnings | Clean (no warnings) |
+| **Mutual exclusion** | Correct | Correct |
+| **Memory model compliance** | Violates DRF guarantee | Complies with DRF guarantee |
