@@ -1,6 +1,6 @@
 (library
  (name spinlocks)
- (modules Lock Benchmark TASLock TTASLock BackoffLock ALock ALockNoCpuRelax))
+ (modules Lock Benchmark TASLock TTASLock TTASLockUnsafe BackoffLock ALock ALockNoCpuRelax))
 
 (executable
  (name test_tas)
@@ -66,6 +66,18 @@
  (name test_alock_no_relax)
  (libraries unix spinlocks)
  (modules test_alock_no_relax)
+ (modes exe))
+
+(executable
+ (name test_ttas_unsafe)
+ (libraries unix spinlocks)
+ (modules test_ttas_unsafe)
+ (modes exe))
+
+(executable
+ (name compare_ttas_variants)
+ (libraries unix spinlocks)
+ (modules compare_ttas_variants)
  (modes exe))
 
 (executable
