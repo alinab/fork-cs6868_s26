@@ -81,6 +81,12 @@
  (modes exe))
 
 (executable
+ (name benchmark_all_locks)
+ (libraries unix spinlocks)
+ (modules benchmark_all_locks)
+ (modes exe))
+
+(executable
  (name benchmark_alock)
  (libraries unix spinlocks)
  (modules benchmark_alock)
