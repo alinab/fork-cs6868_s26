@@ -32,3 +32,9 @@
  (modules benchmark_all_locks)
  (modes exe))
 
+(executable
+ (name benchmark_sequential_bottleneck)
+ (libraries unix spinlocks)
+ (modules benchmark_sequential_bottleneck)
+ (modes exe))
+
