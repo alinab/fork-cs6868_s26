@@ -175,7 +175,9 @@ dune exec ./benchmark_all_locks.exe -- --iterations 100000 --runs 10
 
 ## Benchmark Results
 
-On macOS (Apple M-series, 8 cores) with 50K iterations/thread × 5 runs:
+### macOS (Apple M2, 8 cores)
+
+50K iterations/thread × 5 runs:
 
 ```text
 Threads           TAS         TTAS      Backoff        ALock
@@ -198,6 +200,30 @@ Threads           TAS         TTAS      Backoff        ALock
   - `fetch_and_add` enforces strict FIFO ordering
   - Prevents opportunistic lock acquisition when lock becomes free
   - Creates convoy effect: threads must wait for their specific turn
+
+### Linux (Intel Xeon Gold 5120 @ 2.20GHz, 28 cores)
+
+50K iterations/thread × 5 runs:
+
+```text
+Threads           TAS         TTAS      Backoff        ALock
+----------------------------------------------------------------
+1              14179K       13923K        8297K        4984K
+2               2763K        3577K        4090K        1385K
+3               1950K        2399K        3006K        1463K
+4               1684K        1741K        2111K        1490K
+5               1437K        1704K        2400K        1557K
+6               1469K        1439K        1702K        1564K
+7               1143K        1477K        1542K        1742K
+8               1010K        1275K        1624K        1808K
+```
+
+**Key findings:**
+
+- **ALock performs best** at 8 threads (1.8M ops/sec), unlike macOS where it's worst
+- All locks show **significantly lower throughput** compared to macOS (2-6x slower)
+- **Backoff** still competitive at moderate thread counts (2.4M at 5 threads)
+- Platform differences highlight importance of hardware-specific tuning
 
 ## Implementation Details
 
