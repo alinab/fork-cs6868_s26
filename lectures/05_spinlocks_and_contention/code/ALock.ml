@@ -81,9 +81,12 @@ end = struct
     (* Store slot in domain-local storage for unlock *)
     Domain.DLS.set t.my_slot slot;
     
+    (* Cache the flag reference to avoid repeated array indexing *)
+    let my_flag = t.flags.(slot) in
+    
     (* Spin on MY flag until it becomes true *)
     (* This is the key: each thread spins on a DIFFERENT location *)
-    while not (Atomic.get t.flags.(slot)) do
+    while not (Atomic.get my_flag) do
       Domain.cpu_relax ()
     done
 
@@ -94,70 +97,20 @@ end = struct
     if slot = -1 then
       failwith "unlock called without corresponding lock";
     
+    (* Cache flag references *)
+    let my_flag = t.flags.(slot) in
+    let next_slot = (slot + 1) mod t.capacity in
+    let next_flag = t.flags.(next_slot) in
+    
     (* Clear my flag *)
-    Atomic.set t.flags.(slot) false;
+    Atomic.set my_flag false;
     
     (* Signal the next thread *)
-    let next_slot = (slot + 1) mod t.capacity in
-    Atomic.set t.flags.(next_slot) true
-end
-
-(* ALock without make_contended - for comparison to measure false sharing impact *)
-module ALockNoContention : sig
-  include Lock.LOCK
-  val create_with_capacity : int -> t
-end = struct
-  type t = {
-    flags : bool Atomic.t array;
-    tail : int Atomic.t;
-    capacity : int;
-    my_slot : int Domain.DLS.key;
-  }
-
-  let name = "Array Lock (no padding)"
-
-  let create_with_capacity capacity =
-    if capacity <= 0 then
-      invalid_arg "ALock capacity must be positive";
-    
-    (* Create array using regular Atomic.make (NO padding) *)
-    let flags =
-      Array.init capacity (fun i -> Atomic.make (i = 0))
-    in
-    
-    {
-      flags;
-      tail = Atomic.make 0;
-      capacity;
-      my_slot = Domain.DLS.new_key (fun () -> -1);
-    }
-
-  let create () = create_with_capacity 16
-
-  let lock t =
-    let slot = (Atomic.fetch_and_add t.tail 1) mod t.capacity in
-    Domain.DLS.set t.my_slot slot;
-    while not (Atomic.get t.flags.(slot)) do
-      Domain.cpu_relax ()
-    done
-
-  let unlock t =
-    let slot = Domain.DLS.get t.my_slot in
-    if slot = -1 then
-      failwith "unlock called without corresponding lock";
-    Atomic.set t.flags.(slot) false;
-    let next_slot = (slot + 1) mod t.capacity in
-    Atomic.set t.flags.(next_slot) true
+    Atomic.set next_flag true
 end
 
 (* Default ALock with standard capacity *)
 module DefaultALock : Lock.LOCK = struct
   include ALock
   let create () = ALock.create ()
-end
-
-(* Default ALock without contention padding *)
-module DefaultALockNoContention : Lock.LOCK = struct
-  include ALockNoContention
-  let create () = ALockNoContention.create ()
 end

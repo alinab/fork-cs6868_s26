@@ -99,12 +99,6 @@
  (modes exe))
 
 (executable
- (name compare_alock_variants)
- (libraries unix spinlocks)
- (modules compare_alock_variants)
- (modes exe))
-
-(executable
  (name tune_backoff)
  (libraries unix spinlocks)
  (modules tune_backoff)
