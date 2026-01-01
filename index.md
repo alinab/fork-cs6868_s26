@@ -2,6 +2,8 @@
 layout: default
 ---
 
+![CS6868 Banner]({{ site.baseurl }}/assets/images/chennai_artdeco1.jpg)
+
 # CS6868: Concurrent Programming
 
 ## Course Overview

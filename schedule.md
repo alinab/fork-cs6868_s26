@@ -2,6 +2,7 @@
 layout: page
 title: Schedule
 permalink: /schedule/
+banner_image: visalam.jpeg
 ---
 
 | Lectures | Topic                       | Dates | Comments |

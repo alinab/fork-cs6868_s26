@@ -66,7 +66,7 @@
         }
     }
 }
-*/ 
+*/
 
 
 
@@ -223,8 +223,8 @@ h1 /* .post-title */ {
 }
 
 						.footnotes ol li {list-style-type:decimal;}
-						.footnotes ol {font-size:.85em; color:#666666;}	
-	
+						.footnotes ol {font-size:.85em; color:#666666;}
+
 html {
   overflow-y: scroll;
 }
@@ -314,7 +314,7 @@ article ul {
 article ul > li:before {
   content: "–"; /* en dash */
   position: absolute;
-  margin-left: -1.1em; 
+  margin-left: -1.1em;
 }
 
 article ul#archive > li:before {
@@ -333,3 +333,24 @@ article ul#archive > li:before {
 ul#archive li span a:hover {
        border-bottom: #bdbdbd 1px solid;
 } */
+
+
+/**
+ * Banner images
+ */
+.page-content img,
+.post-content img,
+.home img {
+    width: 100%;
+    max-height: 300px;
+    object-fit: cover;
+    object-position: center;
+    margin-bottom: 2rem;
+    display: block;
+}
+
+.page-content img:first-of-type,
+.post-content img:first-of-type,
+.home img:first-of-type {
+    margin-top: 0;
+}

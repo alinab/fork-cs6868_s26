@@ -2,6 +2,7 @@
 layout: page
 title: Assignments
 permalink: /assignments/
+banner_image: chennai_artdeco2.jpg
 ---
 
 | Assignment   | Due Date |
