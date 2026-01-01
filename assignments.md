@@ -42,19 +42,27 @@ the last few hours of the deadline.
 ## Academic Integrity
 
 You’re in college; you’re expected and encouraged to discuss your work with
-others. That said, **everything you write for this course -- code, written
-assignments, pop quizzes, and everything else—must be your own original work.**
+others. That said, **everything you write for this course must be your own
+original work.**
 
-You may use tools like compilers, linters, or AI assistants (like ChatGPT or
-GitHub Copilot). However:
+### Programming Assignments (Individual)
 
-- **You must cite any AI tools or external sources you use**, and clearly
-  indicate what parts of your work were influenced by them.
-- **You are responsible for understanding and being able to explain everything
-  you submit**. If you don’t understand what it's doing, don’t turn it in.
-- Using AI tools without acknowledgment, or submitting work you can’t explain,
-  may be treated as plagiarism.
-- If in doubt, ask. It’s always better to clarify than to guess.
+- Programming assignments must be completed **individually**.
+- **Do not use LLMs** (Large Language Models like ChatGPT, GitHub Copilot, etc.) for programming assignments. They hinder learning and understanding of concurrent programming concepts.
+- You are responsible for understanding and being able to explain everything you submit.
+- All students must sign an Honour Code at the start of the course.
+- Submissions will be subject to automated plagiarism checks.
 
-Plagiarism of any kind will be reported to the institute and may result in
-disciplinary action.
+### Research Mini Project (Groups of 2)
+
+- The research mini project is done in **groups of 2**.
+- **You may use LLMs** for the research mini project—they make you productive when exploring research problems.
+- You must cite any AI tools or external sources you use, and clearly indicate what parts of your work were influenced by them.
+- You are still responsible for understanding and being able to explain all submitted work.
+
+### Consequences
+
+Plagiarism or academic misconduct of any kind will be handled according to the
+institute policy on malpractice and may result in disciplinary action.
+
+**If in doubt, ask.** It's always better to clarify than to guess.
