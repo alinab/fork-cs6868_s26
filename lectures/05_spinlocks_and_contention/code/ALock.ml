@@ -69,9 +69,10 @@ end = struct
     }
 
   (* Default capacity based on a reasonable number of domains *)
-  (* Note: capacity should be close to the expected number of concurrent threads.
-     If capacity >> threads, slots may never be properly initialized.
-     If capacity < threads, some threads may have to wait longer. *)
+  (* IMPORTANT: capacity MUST be >= max concurrent threads for correctness!
+     If capacity < threads, multiple threads will collide on the same slot,
+     breaking the lock (multiple threads acquire simultaneously).
+     If capacity >> threads, some memory is wasted but correctness is preserved. *)
   let create () = create_with_capacity 16
 
   let lock t =

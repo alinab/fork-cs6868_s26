@@ -31,8 +31,10 @@ module Backoff = struct
   let create min_delay max_delay = { min_delay; max_delay; limit = min_delay }
 
   let backoff t =
-    (* Backoff for 'limit' iterations using cpu_relax *)
-    for _ = 1 to t.limit do
+    (* Backoff for a random duration between 0 and 'limit' using cpu_relax *)
+    (* Randomization prevents synchronized collisions between threads *)
+    let delay = Random.int (t.limit + 1) in
+    for _ = 1 to delay do
       Domain.cpu_relax ()
     done;
     (* Exponentially increase the limit, capped at max_delay *)
