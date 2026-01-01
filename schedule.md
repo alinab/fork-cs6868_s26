@@ -11,4 +11,3 @@ permalink: /schedule/
 | 3        | Concurrent Objects          |       |          |
 | 4        | Memory Consistency Models   |       |          |
 | 5        | Spinlocks and Contention    |       |          |
-
