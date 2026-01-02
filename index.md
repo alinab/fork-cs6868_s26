@@ -52,10 +52,11 @@ Liaise with the TAs over email about where to meet.
 | In-class short quizzes (best 5/6) | 20            |
 | Mid-term exam                     | 20            |
 | End semester exam                 | 20            |
-| Programming assignments (4)       | 24            |
+| Programming assignments (6)       | 24            |
 | Research mini project             | 16            |
 
-We will use absolute grading: S 90, A 80, B 70, C 60, D 50, E 35.
+The dates of the in-class short quizzes will be announced apriori. We will use
+absolute grading: S 90, A 80, B 70, C 60, D 50, E 35.
 
 ## Acknowledgements
 

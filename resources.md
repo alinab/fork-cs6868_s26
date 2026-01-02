@@ -65,74 +65,74 @@ Other editors with good OCaml support: Emacs (with Tuareg/Merlin), Vim (with Mer
 
   Essential reading on control structures, continuations, and effect handlers - foundational concepts for understanding concurrency and algebraic effects in OCaml 5.
 
-## OCaml 5 Multicore
+## OCaml Resources
 
-### Documentation
+### Getting Started with OCaml
 
-- **OCaml 5 Manual**: [Domains](https://ocaml.org/manual/5.4/api/Domain.html) and [Effect Handlers](https://ocaml.org/manual/5.4/api/Effect.html)
+- **CS3100: Paradigms of Programming (Monsoon 2020)** by KC Sivaramakrishnan. [GitHub Repository](https://github.com/kayceesrk/cs3100_m20)
 
-- **OCaml Multicore Wiki**: [github.com/ocaml-multicore/ocaml-multicore/wiki](https://github.com/ocaml-multicore/ocaml-multicore/wiki)
-
-### Tutorials
-
-- **Parallel Programming in Multicore OCaml**: [v2.ocaml.org/releases/5.0/manual/parallelism.html](https://v2.ocaml.org/releases/5.0/manual/parallelism.html)
-
-- **Introduction to Effect Handlers**: [OCaml.org Tutorial](https://ocaml.org/docs/effects)
-
-## General OCaml Resources
-
-### For Beginners
+  Introduction to functional programming with OCaml, including lecture notes, code examples, and YouTube video lectures. Good foundation for students new to OCaml.
 
 - **OCaml Programming: Correct + Efficient + Beautiful** by Michael Clarkson et al. [cs3110.github.io/textbook](https://cs3110.github.io/textbook/cover.html)
 
-  Excellent introduction to functional programming and OCaml.
+  Comprehensive textbook on functional programming and OCaml fundamentals.
 
 - **Real World OCaml (2nd Edition)** by Yaron Minsky, Anil Madhavapeddy and Jason Hickey. [dev.realworldocaml.org](https://dev.realworldocaml.org/)
 
   Practical OCaml programming with real-world examples.
 
-### Reference
+### OCaml 5 Multicore Features
+
+- **OCaml 5.4 Manual**: [Domains](https://ocaml.org/manual/5.4/api/Domain.html) and [Effect Handlers](https://ocaml.org/manual/5.4/api/Effect.html)
+
+- **Parallel Programming in Multicore OCaml**: [ocaml.org/manual/5.4/parallelism.html](https://ocaml.org/manual/5.4/parallelism.html)
+
+- **Introduction to Effect Handlers**: [OCaml.org Tutorial](https://ocaml.org/docs/effects)
+
+- **OCaml Multicore Wiki**: [github.com/ocaml-multicore/ocaml-multicore/wiki](https://github.com/ocaml-multicore/ocaml-multicore/wiki)
+
+### Reference & Practice
 
 - **OCaml Manual**: [ocaml.org/manual](https://ocaml.org/manual/)
 
 - **OCaml API Documentation**: [ocaml.org/api](https://ocaml.org/api/)
 
-### Practice
-
 - **99 OCaml Problems**: [ocaml.org/problems](https://ocaml.org/problems)
 
 - **Exercism OCaml Track**: [exercism.org/tracks/ocaml](https://exercism.org/tracks/ocaml)
 
-## Systems and Architecture
+### Community
 
-### Background Reading
+- **OCaml Discuss**: [discuss.ocaml.org](https://discuss.ocaml.org/)
+
+- **OCaml Discord**: [discord.gg/cCYQbqN](https://discord.gg/cCYQbqN)
+
+## Background Reading
+
+### Computer Architecture & Systems
 
 - **Computer Architecture: A Quantitative Approach** by Hennessy and Patterson
 
   Essential for understanding memory hierarchies, cache coherence, and multiprocessor systems.
 
-- **Operating Systems: Three Easy Pieces** by Remzi and Andrea Arpaci-Dusseau. Free at [pages.cs.wisc.edu/~remzi/OSTEP/](https://pages.cs.wisc.edu/~remzi/OSTEP/)
+- **Operating Systems: Three Easy Pieces** by Remzi and Andrea Arpaci-Dusseau. [Free online](https://pages.cs.wisc.edu/~remzi/OSTEP/)
 
-  Chapters on concurrency and synchronization.
+  Excellent coverage of concurrency, synchronization, and operating system concepts.
 
-## Additional Topics
-
-### Memory Models
+### Memory Models & Consistency
 
 - **C/C++ Memory Model**: [cppreference.com/w/cpp/atomic/memory_order](https://en.cppreference.com/w/cpp/atomic/memory_order)
 
+  Understanding memory ordering and atomics in C/C++.
+
 - **Linux Kernel Memory Barriers**: [kernel.org documentation](https://www.kernel.org/doc/Documentation/memory-barriers.txt)
 
-### Lock-Free Programming
+  Low-level details of memory barriers in system programming.
 
-- **The Art of Multiprocessor Programming** (primary textbook above) has excellent coverage
+### Advanced Topics
 
-- **Preshing on Programming**: [preshing.com](https://preshing.com/) - Blog with excellent articles on concurrency and lock-free programming
+- **Preshing on Programming**: [preshing.com](https://preshing.com/)
 
-## Online Communities
-
-- **OCaml Discuss**: [discuss.ocaml.org](https://discuss.ocaml.org/)
-
-- **OCaml Discord**: [discord.gg/cCYQbqN](https://discord.gg/cCYQbqN)
+  Excellent blog with articles on concurrency, lock-free programming, and memory models.
 
 - **r/ocaml**: [reddit.com/r/ocaml](https://reddit.com/r/ocaml)
