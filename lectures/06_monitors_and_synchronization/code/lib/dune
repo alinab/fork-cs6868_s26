@@ -1,0 +1,19 @@
+(library
+ (name queue_non_blocking)
+ (modules queue_non_blocking))
+
+(library
+ (name queue_spin_wait)
+ (modules queue_spin_wait))
+
+(library
+ (name queue_blocking)
+ (modules queue_blocking))
+
+(library
+ (name simple_rw_lock)
+ (modules simple_rw_lock))
+
+(library
+ (name fifo_rw_lock)
+ (modules fifo_rw_lock))

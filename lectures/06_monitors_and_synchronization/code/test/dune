@@ -1,0 +1,29 @@
+(executable
+ (name test_non_blocking)
+ (modules test_non_blocking)
+ (libraries queue_non_blocking))
+
+(executable
+ (name test_spin_wait)
+ (modules test_spin_wait)
+ (libraries queue_spin_wait))
+
+(executable
+ (name test_blocking)
+ (modules test_blocking)
+ (libraries queue_blocking))
+
+(executable
+ (name test_rw_locks)
+ (modules test_rw_locks)
+ (libraries simple_rw_lock fifo_rw_lock))
+
+(executable
+ (name test_rw_invariants)
+ (modules test_rw_invariants)
+ (libraries simple_rw_lock fifo_rw_lock unix))
+
+(executable
+ (name test_deadlock)
+ (modules test_deadlock)
+ (libraries fifo_rw_lock unix))
