@@ -1,10 +1,11 @@
-(** FIFO read-write lock
+(**
+  FIFO read-write lock
 
-    Multiple readers can hold the lock simultaneously.
-    Writers have exclusive access.
+  Multiple readers can hold the lock simultaneously.
+  Writers have exclusive access.
 
-    This version enforces FIFO ordering to prevent starvation.
-    Uses cumulative counters to track read lock acquisitions and releases.
+  This version enforces FIFO ordering to prevent starvation.
+  Uses cumulative counters to track read lock acquisitions and releases.
 *)
 
 type t = {
