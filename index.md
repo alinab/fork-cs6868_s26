@@ -39,10 +39,14 @@ hands-on experience with modern concurrent programming techniques.
 ## Essential Details
 
 - **Instructor:** [KC Sivaramakrishnan](http://kcsrk.info), who goes by "KC".
-- **Where:**
+- **Where:** CS26
 - **When:**
-- **Slack**:
-- **Moodle**:
+  + Mon: 1100
+  + Tue: 1000
+  + Wed: 0900
+  + Thu: 1200
+- **Slack**: https://cs6868s26iitm.slack.com
+- **Moodle**: 
 - **TAs:**
 
 | Name | Email (@smail.iitm.ac.in) |

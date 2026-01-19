@@ -74,7 +74,7 @@ let alice can pond =
         Printf.printf "Alice: Releasing pets to eat %s\n%!" (fish_to_string fish);
         Unix.sleepf 0.1;
         Printf.printf "Alice: Recapturing pets\n%!"
-    | None -> ());
+    | None -> failwith "impossible");
     reset can
   done
 

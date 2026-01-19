@@ -9,8 +9,6 @@ strategies using OCaml 5 domains.
 
 Simple examples demonstrating basic parallel computation with OCaml 5 domains:
 
-Simple examples demonstrating basic parallel computation with OCaml 5 domains:
-
 #### 1. Sequential Fibonacci (`fib.ml`)
 
 A basic sequential Fibonacci implementation using naive recursion.
@@ -58,46 +56,6 @@ hyperfine --warmup 3 \
 ```
 
 **Note**: The parallel version spawns 2 domains computing the same value independently. This is intentionally inefficient to demonstrate domain spawning overhead and the importance of proper parallelization strategies.
-
-### Producer-Consumer Example
-
-#### Producer-Consumer with Can Protocol (`prod_cons.ml`)
-
-Demonstrates the classic producer-consumer synchronization pattern using a "can protocol" for coordination. Bob (producer) stocks a pond with random fish, and Alice (consumer) releases pets to eat the fish. They coordinate using a shared "can" state (up/down) to ensure proper synchronization.
-
-**Features:**
-
-- Can protocol synchronization (similar to the original Alice and Bob example)
-- Random fish selection (Salmon, Trout, Bass, Catfish, Tuna)
-- Busy-waiting loops for coordination
-- Clear trace output showing producer-consumer interaction
-
-**Usage:**
-
-```bash
-dune exec -- ./prod_cons.exe
-```
-
-**Note**: The program runs indefinitely. Use Ctrl+C to stop, or run with timeout:
-
-```bash
-timeout 5 dune exec -- ./prod_cons.exe
-```
-
-**Example output:**
-
-```text
-Starting Producer-Consumer with Can Protocol...
-Bob produces fish, Alice's pets consume them.
-
-Bob: Stocking pond with Salmon
-Alice: Releasing pets to eat Salmon
-Alice: Recapturing pets
-Bob: Stocking pond with Trout
-Alice: Releasing pets to eat Trout
-Alice: Recapturing pets
-...
-```
 
 ### Prime Number Printers
 
@@ -164,7 +122,7 @@ dune exec ./prime_counter.exe <limit> <num_domains>
 dune exec ./prime_counter.exe 10000 4
 ```
 
-## Optional Printing Flag (Prime Programs Only)
+### Optional Printing Flag
 
 Prime number programs support an optional printing flag to control output. By default, primes are not printed (for faster benchmarking). Use `--print` or `-p` to enable output.
 
@@ -192,38 +150,7 @@ dune exec -- ./prime_ranges.exe 10000000 4
 dune exec -- ./prime_ranges.exe 10000000 4 -p
 ```
 
-## Building
-
-Build all programs:
-
-```bash
-dune build
-# or
-make build
-```
-
-Clean build artifacts:
-
-```bash
-dune clean
-# or
-make clean
-```
-
-## Requirements
-
-- OCaml 5.0 or later (for Domain support)
-- Dune build system
-- [hyperfine](https://github.com/sharkdp/hyperfine) (optional, for benchmarking)
-
-Install hyperfine:
-
-```bash
-brew install hyperfine  # macOS
-# or cargo install hyperfine
-```
-
-## Benchmarking with Hyperfine
+### Benchmarking Prime Programs
 
 The included Makefile provides convenient targets for statistical benchmarking using hyperfine:
 
@@ -261,7 +188,7 @@ make bench-full  # Exports results.json and results.md
 
 All benchmark targets export results to markdown tables for easy comparison.
 
-## Manual Performance Comparison
+### Manual Performance Comparison
 
 Try running all three with the same inputs to compare:
 
@@ -276,7 +203,7 @@ dune exec -- ./prime_ranges.exe 1000000 4
 dune exec -- ./prime_counter.exe 1000000 4
 ```
 
-## Discussion Points
+### Discussion Points
 
 1. **Sequential vs Parallel**: How much speedup do you get with parallelization?
 2. **Static vs Dynamic**: Which parallel approach performs better? Why?
@@ -285,7 +212,7 @@ dune exec -- ./prime_counter.exe 1000000 4
 5. **Synchronization Cost**: The counter-based approach has atomic overhead but achieves better load balance
 6. **Workload Size**: With larger workloads (100M+), the counter-based approach outperforms range-based due to load balancing benefits
 
-## Typical Results
+### Typical Results
 
 With 10M numbers on a multi-core system:
 
@@ -298,6 +225,77 @@ With 100M numbers, load imbalance becomes more severe:
 
 - **Range-4**: ~10.3s
 - **Counter-4**: ~9.0s (15% faster due to better load balancing)
+
+### Producer-Consumer Example
+
+#### Producer-Consumer with Can Protocol (`prod_cons.ml`)
+
+Demonstrates the classic producer-consumer synchronization pattern using a "can protocol" for coordination. Bob (producer) stocks a pond with random fish, and Alice (consumer) releases pets to eat the fish. They coordinate using a shared "can" state (up/down) to ensure proper synchronization.
+
+**Features:**
+
+- Can protocol synchronization (similar to the original Alice and Bob example)
+- Random fish selection (Salmon, Trout, Bass, Catfish, Tuna)
+- Busy-waiting loops for coordination
+- Clear trace output showing producer-consumer interaction
+
+**Usage:**
+
+```bash
+dune exec -- ./prod_cons.exe
+```
+
+**Note**: The program runs indefinitely. Use Ctrl+C to stop, or run with timeout:
+
+```bash
+timeout 5 dune exec -- ./prod_cons.exe
+```
+
+**Example output:**
+
+```text
+Starting Producer-Consumer with Can Protocol...
+Bob produces fish, Alice's pets consume them.
+
+Bob: Stocking pond with Salmon
+Alice: Releasing pets to eat Salmon
+Alice: Recapturing pets
+Bob: Stocking pond with Trout
+Alice: Releasing pets to eat Trout
+Alice: Recapturing pets
+...
+```
+
+## Building
+
+Build all programs:
+
+```bash
+dune build
+# or
+make build
+```
+
+Clean build artifacts:
+
+```bash
+dune clean
+# or
+make clean
+```
+
+## Requirements
+
+- OCaml 5.0 or later (for Domain support)
+- Dune build system
+- [hyperfine](https://github.com/sharkdp/hyperfine) (optional, for benchmarking prime programs)
+
+Install hyperfine:
+
+```bash
+brew install hyperfine  # macOS
+# or cargo install hyperfine
+```
 
 ## Notes
 

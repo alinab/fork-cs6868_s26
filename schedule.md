@@ -7,10 +7,10 @@ banner_link: https://www.madrasinherited.in/
 banner_credit: "Photo © Madras Inherited"
 ---
 
-| Lectures | Topic                       | Dates | Comments |
-|----------|-----------------------------| ------|----------|
-| 1        | Introduction                |       |          |
-| 2        | Mutual Exclusion            |       |          |
-| 3        | Concurrent Objects          |       |          |
-| 4        | Memory Consistency Models   |       |          |
-| 5        | Spinlocks and Contention    |       |          |
+| Lectures | Topic                       | Dates | # Lecture Hours | Comments |
+|----------|-----------------------------| ------|-----------------| ---------|
+| 1        | Introduction                | 19/01 |                 |          |
+| 2        | Mutual Exclusion            |       |                 |          |
+| 3        | Concurrent Objects          |       |                 |          |
+| 4        | Memory Consistency Models   |       |                 |          |
+| 5        | Spinlocks and Contention    |       |                 |          |
