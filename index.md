@@ -45,8 +45,8 @@ hands-on experience with modern concurrent programming techniques.
   + Tue: 1000
   + Wed: 0900
   + Thu: 1200
-- **Slack**: https://cs6868s26iitm.slack.com
-- **Moodle**: 
+- **Slack**: [https://cs6868s26iitm.slack.com](https://cs6868s26iitm.slack.com)
+- **Moodle**:
 - **TAs:**
 
 | Name | Email (@smail.iitm.ac.in) |
