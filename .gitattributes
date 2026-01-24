@@ -1,1 +1,2 @@
 *.key filter=lfs diff=lfs merge=lfs -text
+lectures/07_linked_lists/07_linked_lists.key filter=lfs diff=lfs merge=lfs -text

@@ -1,0 +1,3 @@
+(library
+ (name coarse_list)
+ (modules coarse_list))
