@@ -1,7 +1,7 @@
 .PHONY: build clean bench bench-quick bench-full bench-compare bench-seq bench-range bench-counter
 
-LIMIT := 20000000
-LIMIT_SMALL := 1000000
+LIMIT := 20_000_000
+LIMIT_SMALL := 1_000_000
 
 build:
 	dune build
