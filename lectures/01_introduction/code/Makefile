@@ -3,11 +3,23 @@
 LIMIT := 20_000_000
 LIMIT_SMALL := 1_000_000
 
+BUILD_PREFIX := ../../../_build/default/lectures/01_introduction/code
+
 build:
 	dune build
 
 clean:
+	@echo "Cleaning everything at the root..."
 	dune clean
+
+bench-dune-diff:
+	@echo "=== Test benchmark with and without dune with ($(LIMIT_SMALL)) ==="
+	@hyperfine --warmup 4 \
+		--export-markdown results-sequential.md \
+		'dune exec -- ./prime_sequential.exe $(LIMIT_SMALL)' \
+		'dune exec -- ./prime_sequential.exe $(LIMIT_SMALL) -p' \
+		'$(BUILD_PREFIX)/prime_sequential.exe $(LIMIT_SMALL)' \
+		'$(BUILD_PREFIX)/prime_sequential.exe $(LIMIT_SMALL) -p' \
 
 # Quick benchmark with 1M (faster iteration)
 bench-quick:
