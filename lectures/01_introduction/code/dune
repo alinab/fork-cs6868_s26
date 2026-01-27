@@ -18,4 +18,5 @@
 
 (executable
  (name prod_cons)
+ (preprocess (pps ppx_deriving.show))
  (libraries unix))

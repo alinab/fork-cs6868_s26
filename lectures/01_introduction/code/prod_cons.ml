@@ -2,14 +2,7 @@
 let pr = Printf.printf
 
 (* Different types of fish *)
-type fish = Salmon | Trout | Bass | Catfish | Tuna
-
-let fish_to_string = function
-  | Salmon -> "Salmon"
-  | Trout -> "Trout"
-  | Bass -> "Bass"
-  | Catfish -> "Catfish"
-  | Tuna -> "Tuna"
+type fish = Salmon | Trout | Bass | Catfish | Tuna [@@deriving show]
 
 let random_fish () =
   match Random.int 5 with
@@ -41,7 +34,7 @@ let knock_over can = can.state <- Down
 type pond = { mutable food : fish option }
 
 (* At the start, the pond has no fish; this setup is correct
-   with the can being initally up *)
+   when the can being initally up *)
 let create_pond () = { food = None }
 
 let stock_pond pond fish = pond.food <- Some fish
@@ -62,7 +55,7 @@ let alice can pond =
     unless is_down can (fun _ ->
       (match get_food pond with
       | Some fish ->
-          pr "Alice: Releasing pets to eat %s\n%!" (fish_to_string fish);
+          pr "Alice: Releasing pets to eat %s\n%!" (show_fish fish);
           Unix.sleepf 0.1;
           pr "Alice: Recapturing pets\n%!"
       | None -> failwith "impossible");
@@ -73,7 +66,7 @@ let alice can pond =
 let bob can pond =
     unless is_up can (fun _ ->
       let fish = random_fish () in
-      pr "Bob: Stocking pond with %s\n%!" (fish_to_string fish);
+      pr "Bob: Stocking pond with %s\n%!" (show_fish fish);
       stock_pond pond fish;
       knock_over can
     )
