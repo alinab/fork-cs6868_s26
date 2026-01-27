@@ -15,7 +15,6 @@ type 'a node = {
 (** The coarse-grained list type *)
 type 'a t = {
   head : 'a node;          (* sentinel node at the start *)
-  tail : 'a node;          (* sentinel node at the end *)
   lock : Mutex.t;          (* single lock for entire list *)
 }
 
@@ -23,7 +22,7 @@ type 'a t = {
 let create () =
   let rec head = { item = None; key = min_int; next = tail }
   and tail = { item = None; key = max_int; next = tail } in
-  { head; tail; lock = Mutex.create () }
+  { head; lock = Mutex.create () }
 
 (** Helper to execute a function while holding the lock *)
 let with_lock list f =

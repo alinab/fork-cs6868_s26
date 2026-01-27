@@ -1,3 +1,15 @@
 (library
+ (name seq_list)
+ (modules seq_list))
+
+(library
  (name coarse_list)
  (modules coarse_list))
+
+(library
+ (name fine_list)
+ (modules fine_list))
+
+(library
+ (name optimistic_list)
+ (modules optimistic_list))

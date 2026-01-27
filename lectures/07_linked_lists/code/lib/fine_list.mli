@@ -1,0 +1,21 @@
+(** Fine-grained synchronization list interface *)
+
+type 'a t
+(** The type of a fine-grained list containing elements of type ['a] *)
+
+val create : unit -> 'a t
+(** [create ()] creates a new empty list with sentinel nodes *)
+
+val add : 'a t -> 'a -> bool
+(** [add list item] adds [item] to the list.
+    Returns [true] if the element was newly added,
+    [false] if it was already present. *)
+
+val remove : 'a t -> 'a -> bool
+(** [remove list item] removes [item] from the list.
+    Returns [true] if the element was present and removed,
+    [false] if it was not present. *)
+
+val contains : 'a t -> 'a -> bool
+(** [contains list item] tests whether [item] is present in the list.
+    Returns [true] if present, [false] otherwise. *)

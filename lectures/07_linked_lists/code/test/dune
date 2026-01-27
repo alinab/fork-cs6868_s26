@@ -1,7 +1,22 @@
 (executable
+ (name test_seq_list)
+ (modules test_seq_list)
+ (libraries seq_list))
+
+(executable
  (name test_coarse_list)
  (modules test_coarse_list)
  (libraries coarse_list))
+
+(executable
+ (name test_fine_list)
+ (modules test_fine_list)
+ (libraries fine_list))
+
+(executable
+ (name test_optimistic_list)
+ (modules test_optimistic_list)
+ (libraries optimistic_list))
 
 (executable
  (name qcheck_lin_coarse_list)
@@ -12,3 +27,23 @@
  (name qcheck_stm_coarse_list)
  (modules qcheck_stm_coarse_list)
  (libraries coarse_list qcheck-stm.sequential qcheck-stm.domain qcheck-multicoretests-util))
+
+(executable
+ (name qcheck_lin_fine_list)
+ (modules qcheck_lin_fine_list)
+ (libraries fine_list qcheck-lin.domain))
+
+(executable
+ (name qcheck_stm_fine_list)
+ (modules qcheck_stm_fine_list)
+ (libraries fine_list qcheck-stm.sequential qcheck-stm.domain qcheck-multicoretests-util))
+
+(executable
+ (name qcheck_lin_optimistic_list)
+ (modules qcheck_lin_optimistic_list)
+ (libraries optimistic_list qcheck-lin.domain))
+
+(executable
+ (name qcheck_stm_optimistic_list)
+ (modules qcheck_stm_optimistic_list)
+ (libraries optimistic_list qcheck-stm.sequential qcheck-stm.domain qcheck-multicoretests-util))

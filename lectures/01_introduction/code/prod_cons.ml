@@ -21,47 +21,26 @@ let random_fish () =
 (* Can state for synchronization *)
 type can_state = Up | Down
 
-type can = { mutable state : can_state; mutex : Mutex.t }
+type can = { mutable state : can_state }
 
-let create_can () = { state = Up; mutex = Mutex.create () }
+let create_can () = { state = Up }
 
-let is_up can =
-  Mutex.lock can.mutex;
-  let result = can.state = Up in
-  Mutex.unlock can.mutex;
-  result
+let is_up can = can.state = Up
 
-let is_down can =
-  Mutex.lock can.mutex;
-  let result = can.state = Down in
-  Mutex.unlock can.mutex;
-  result
+let is_down can = can.state = Down
 
-let reset can =
-  Mutex.lock can.mutex;
-  can.state <- Up;
-  Mutex.unlock can.mutex
+let reset can = can.state <- Up
 
-let knock_over can =
-  Mutex.lock can.mutex;
-  can.state <- Down;
-  Mutex.unlock can.mutex
+let knock_over can = can.state <- Down
 
 (* Shared pond with current fish *)
-type pond = { mutable food : fish option; mutex : Mutex.t }
+type pond = { mutable food : fish option }
 
-let create_pond () = { food = None; mutex = Mutex.create () }
+let create_pond () = { food = None }
 
-let stock_pond pond fish =
-  Mutex.lock pond.mutex;
-  pond.food <- Some fish;
-  Mutex.unlock pond.mutex
+let stock_pond pond fish = pond.food <- Some fish
 
-let get_food pond =
-  Mutex.lock pond.mutex;
-  let food = pond.food in
-  Mutex.unlock pond.mutex;
-  food
+let get_food pond = pond.food
 
 (* Alice (Consumer) - releases pets to eat fish *)
 let alice can pond =
