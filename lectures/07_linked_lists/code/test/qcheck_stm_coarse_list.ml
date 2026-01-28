@@ -97,29 +97,29 @@ let run_test test_name =
   match test_name with
   | "sequential" | "seq" ->
       Printf.printf "Running sequential test (should pass)...\n\n%!";
-      let seq_test = Seq.agree_test ~count:1000 ~name:"CoarseList sequential" in
+      let seq_test = Seq.agree_test ~count:5000 ~name:"CoarseList sequential" in
       QCheck_base_runner.run_tests ~verbose:true [seq_test]
 
   | "concurrent" | "conc" ->
       Printf.printf "Running concurrent test (should pass)...\n\n%!";
       let arb_cmds_par =
-        Dom.arb_triple 15 10 Spec.arb_cmd Spec.arb_cmd Spec.arb_cmd
+        Dom.arb_triple 12 8 Spec.arb_cmd Spec.arb_cmd Spec.arb_cmd
       in
       let conc_test =
-        QCheck.Test.make ~retries:10 ~count:100 ~name:"CoarseList concurrent" arb_cmds_par
+        QCheck.Test.make ~retries:10 ~count:200 ~name:"CoarseList concurrent" arb_cmds_par
         @@ fun triple ->
         QCheck.assume (Dom.all_interleavings_ok triple);
-        repeat 15 Dom.agree_prop_par triple
+        repeat 12 Dom.agree_prop_par triple
       in
       QCheck_base_runner.run_tests ~verbose:true [conc_test]
 
   | "all" ->
       Printf.printf "Running all tests...\n\n%!";
       let tests = [
-        Seq.agree_test ~count:1000 ~name:"CoarseList sequential";
-        QCheck.Test.make ~retries:10 ~count:100 ~name:"CoarseList concurrent"
-          (Dom.arb_triple 15 10 Spec.arb_cmd Spec.arb_cmd Spec.arb_cmd)
-          (fun triple -> QCheck.assume (Dom.all_interleavings_ok triple); repeat 15 Dom.agree_prop_par triple);
+        Seq.agree_test ~count:5000 ~name:"CoarseList sequential";
+        QCheck.Test.make ~retries:10 ~count:500 ~name:"CoarseList concurrent"
+          (Dom.arb_triple 12 8 Spec.arb_cmd Spec.arb_cmd Spec.arb_cmd)
+          (fun triple -> QCheck.assume (Dom.all_interleavings_ok triple); repeat 12 Dom.agree_prop_par triple);
       ] in
       QCheck_base_runner.run_tests ~verbose:true tests
 

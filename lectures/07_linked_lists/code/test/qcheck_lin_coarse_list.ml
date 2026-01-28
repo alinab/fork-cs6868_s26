@@ -38,8 +38,8 @@ end
 (** Generate the linearizability test from the specification *)
 module CL_domain = Lin_domain.Make(CLSig)
 
-(** Run 100 test iterations *)
+(** Run 500 test iterations for extensive testing *)
 let () =
   QCheck_base_runner.run_tests_main [
-    CL_domain.lin_test ~count:100 ~name:"CoarseList linearizability";
+    CL_domain.lin_test ~count:500 ~name:"CoarseList linearizability";
   ]

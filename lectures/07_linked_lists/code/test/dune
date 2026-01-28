@@ -19,6 +19,16 @@
  (libraries optimistic_list))
 
 (executable
+ (name test_lazy_list)
+ (modules test_lazy_list)
+ (libraries lazy_list))
+
+(executable
+ (name test_lockfree_list)
+ (modules test_lockfree_list)
+ (libraries lockfree_list))
+
+(executable
  (name qcheck_lin_coarse_list)
  (modules qcheck_lin_coarse_list)
  (libraries coarse_list qcheck-lin.domain))
@@ -47,3 +57,23 @@
  (name qcheck_stm_optimistic_list)
  (modules qcheck_stm_optimistic_list)
  (libraries optimistic_list qcheck-stm.sequential qcheck-stm.domain qcheck-multicoretests-util))
+
+(executable
+ (name qcheck_lin_lazy_list)
+ (modules qcheck_lin_lazy_list)
+ (libraries lazy_list qcheck-lin.domain))
+
+(executable
+ (name qcheck_stm_lazy_list)
+ (modules qcheck_stm_lazy_list)
+ (libraries lazy_list qcheck-stm.sequential qcheck-stm.domain qcheck-multicoretests-util))
+
+(executable
+ (name qcheck_lin_lockfree_list)
+ (modules qcheck_lin_lockfree_list)
+ (libraries lockfree_list qcheck-lin.domain))
+
+(executable
+ (name qcheck_stm_lockfree_list)
+ (modules qcheck_stm_lockfree_list)
+ (libraries lockfree_list qcheck-stm.sequential qcheck-stm.domain qcheck-multicoretests-util))

@@ -13,3 +13,16 @@
 (library
  (name optimistic_list)
  (modules optimistic_list))
+
+(library
+ (name lazy_list)
+ (modules lazy_list))
+
+(library
+ (name atomic_markable_ref)
+ (modules atomic_markable_ref))
+
+(library
+ (name lockfree_list)
+ (modules lockfree_list)
+ (libraries atomic_markable_ref))

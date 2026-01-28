@@ -39,9 +39,9 @@ let thread_work () =
   for i = 1 to iterations do
     Printf.printf "Thread %d: attempting lock (iteration %d)\n%!" thread_id i;
     LockTwo.lock ();
-    Printf.printf "Thread %d: ENTERED critical section\n%!" thread_id;
+    Printf.printf "Thread %d: ENTERED critical section (iteration %d)\n%!" thread_id i;
     incr counter;
-    Printf.printf "Thread %d: LEAVING critical section\n%!" thread_id;
+    Printf.printf "Thread %d: LEAVING critical section (iteration %d)\n%!" thread_id i;
     LockTwo.unlock ()
   done;
   Printf.printf "Thread %d completed\n%!" thread_id
