@@ -29,39 +29,36 @@ let with_lock list f =
   Mutex.lock list.lock;
   Fun.protect ~finally:(fun () -> Mutex.unlock list.lock) f
 
+(** Locate position for key. Returns (pred, curr) where curr.key >= key *)
+let rec locate key pred =
+  let curr = pred.next in
+  if curr.key < key then
+    locate key curr
+  else
+    (pred, curr)
+
 (** Add an element to the list *)
 let add list item =
   let key = Hashtbl.hash item in
   with_lock list @@ fun () ->
-    let rec traverse pred curr =
-      if curr.key < key then
-        traverse curr curr.next
-      else if curr.key = key then
-        false  (* element already present *)
-      else begin
-        (* insert new node between pred and curr *)
-        let node = { item = Some item; key; next = curr } in
-        pred.next <- node;
-        true
-      end
-    in
-    traverse list.head list.head.next
+    let (pred, curr) = locate key list.head in
+    if curr.key = key then false
+    else begin
+      let node = { item = Some item; key; next = curr } in
+      pred.next <- node;
+      true
+    end
 
 (** Remove an element from the list *)
 let remove list item =
   let key = Hashtbl.hash item in
   with_lock list @@ fun () ->
-    let rec traverse pred curr =
-      if curr.key < key then
-        traverse curr curr.next
-      else if curr.key = key then begin
-        (* element found, remove it *)
-        pred.next <- curr.next;
-        true
-      end else
-        false  (* element not present *)
-    in
-    traverse list.head list.head.next
+    let (pred, curr) = locate key list.head in
+    if curr.key = key then begin
+      pred.next <- curr.next;
+      true
+    end else
+      false
 
 (** Test whether an element is present *)
 let contains list item =
