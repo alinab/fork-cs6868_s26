@@ -1,0 +1,6 @@
+(executable
+ (name benchmark_lists)
+ (modules benchmark_lists)
+ (libraries coarse_list fine_list optimistic_list lazy_list lockfree_list
+            lazy_list_racefree optimistic_list_racefree unix)
+ (ocamlopt_flags (:standard -O3 -inline 100)))

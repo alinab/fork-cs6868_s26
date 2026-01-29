@@ -29,6 +29,16 @@
  (libraries lockfree_list))
 
 (executable
+ (name test_lazy_list_racefree)
+ (modules test_lazy_list_racefree)
+ (libraries lazy_list_racefree))
+
+(executable
+ (name test_optimistic_list_racefree)
+ (modules test_optimistic_list_racefree)
+ (libraries optimistic_list_racefree))
+
+(executable
  (name qcheck_lin_coarse_list)
  (modules qcheck_lin_coarse_list)
  (libraries coarse_list qcheck-lin.domain))

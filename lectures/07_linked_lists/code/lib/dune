@@ -24,5 +24,13 @@
 
 (library
  (name lockfree_list)
- (modules lockfree_list)
- (libraries atomic_markable_ref))
+ (libraries atomic_markable_ref)
+ (modules lockfree_list))
+
+(library
+ (name lazy_list_racefree)
+ (modules lazy_list_racefree))
+
+(library
+ (name optimistic_list_racefree)
+ (modules optimistic_list_racefree))

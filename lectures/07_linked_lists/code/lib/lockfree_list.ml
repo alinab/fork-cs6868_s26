@@ -53,7 +53,8 @@ let locate head key =
   let rec retry pred =
     let curr = AMR.get_reference pred.next in
     let rec advance pred curr =
-      let (succ, marked) = AMR.get curr.next in
+      let succ = AMR.get_reference curr.next in
+      let marked = AMR.get_mark curr.next in
       if marked then
         if AMR.compare_and_set pred.next
             ~expected_ref:curr ~new_ref:succ
@@ -88,9 +89,9 @@ let remove list item =
   let key = Hashtbl.hash item in
   let rec attempt () =
     let (pred, curr) = locate list.head key in
-    if curr.key <> key then false
+    if not (curr.key == key) then false
     else
-      let (succ, _) = AMR.get curr.next in
+      let succ = AMR.get_reference curr.next in
       if AMR.compare_and_set curr.next ~expected_ref:succ ~new_ref:succ ~expected_mark:false ~new_mark:true then (
         ignore (AMR.compare_and_set pred.next ~expected_ref:curr ~new_ref:succ ~expected_mark:false ~new_mark:false);
         true
@@ -102,5 +103,16 @@ let remove list item =
 (** Test whether an element is present *)
 let contains list item =
   let key = Hashtbl.hash item in
-  let (_, curr) = locate list.head key in
-  curr.key = key && not (AMR.get_mark curr.next)
+  (* Direct traversal without helping for better performance on read-heavy workloads *)
+  let rec loop curr =
+    let next_node = AMR.get_reference curr.next in
+    let is_marked = AMR.get_mark curr.next in
+    if is_marked then
+      (* Skip marked nodes *)
+      loop next_node
+    else if curr.key < key then
+      loop next_node
+    else
+      curr.key = key
+  in
+  loop list.head

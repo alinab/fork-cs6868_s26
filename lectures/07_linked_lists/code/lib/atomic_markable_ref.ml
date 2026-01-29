@@ -10,10 +10,6 @@ type 'a t = 'a marked_ref Atomic.t
 let create reference marked =
   Atomic.make { reference; marked }
 
-let get amr =
-  let mr = Atomic.get amr in
-  (mr.reference, mr.marked)
-
 let get_reference amr =
   let mr = Atomic.get amr in
   mr.reference

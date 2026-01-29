@@ -6,9 +6,6 @@ type 'a t
 val create : 'a -> bool -> 'a t
 (** [create ref mark] creates a new atomic markable reference *)
 
-val get : 'a t -> 'a * bool
-(** [get amr] atomically gets both the reference and mark *)
-
 val get_reference : 'a t -> 'a
 (** [get_reference amr] gets the reference value *)
 
