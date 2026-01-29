@@ -69,7 +69,7 @@ def plot_thread_scaling(csv_file, title, output_file):
     ax.ticklabel_format(style='scientific', axis='y', scilimits=(0,0))
 
     plt.tight_layout()
-    plt.savefig(output_file, dpi=150, bbox_inches='tight')
+    plt.savefig(output_file, dpi=300, bbox_inches='tight')
     print(f"Saved {output_file}")
     plt.close()
 
@@ -95,7 +95,7 @@ def plot_varying_contains(csv_file, output_file):
                    label=style['label'])
 
     ax.set_xlabel('% Contains()', fontsize=12)
-    ax.set_ylabel('Ops/sec (28 threads/0 load)', fontsize=12)
+    ax.set_ylabel('Ops/sec (24 threads/0 load)', fontsize=12)
     ax.set_title('As Contains Ratio Increases', fontsize=14, fontweight='bold')
     ax.legend(loc='upper left', fontsize=10)
     ax.grid(True, alpha=0.3)
@@ -104,7 +104,7 @@ def plot_varying_contains(csv_file, output_file):
     ax.ticklabel_format(style='scientific', axis='y', scilimits=(0,0))
 
     plt.tight_layout()
-    plt.savefig(output_file, dpi=150, bbox_inches='tight')
+    plt.savefig(output_file, dpi=300, bbox_inches='tight')
     print(f"Saved {output_file}")
     plt.close()
 

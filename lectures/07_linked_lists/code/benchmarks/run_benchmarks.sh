@@ -69,8 +69,8 @@ echo ""
 echo "Results saved to $CSV_FILE"
 echo ""
 
-# Experiment 3: Varying contains ratio (28 threads)
-echo "Experiment 3: Varying Contains Ratio (fixed 28 threads)"
+# Experiment 3: Varying contains ratio (24 threads)
+echo "Experiment 3: Varying Contains Ratio (fixed 24 threads)"
 CSV_FILE="$RESULTS_DIR/varying_contains.csv"
 rm -f "$CSV_FILE"
 echo "impl,threads,contains_pct,median,avg" > "$CSV_FILE"
@@ -80,7 +80,7 @@ for impl in $IMPLEMENTATIONS; do
     echo "  Running $impl with $contains% contains..."
     dune exec benchmarks/benchmark_lists.exe -- \
       --impl "$impl" \
-      --threads 28 \
+      --threads 24 \
       --contains "$contains" \
       --duration "$DURATION" \
       --runs "$RUNS" \
