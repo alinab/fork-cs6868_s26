@@ -18,5 +18,12 @@
 
 (executable
  (name prod_cons)
+ (modules prod_cons)
+ (preprocess (pps ppx_deriving.show))
+ (libraries unix))
+
+(executable
+ (name prod_cons_flag_proto)
+ (modules prod_cons_flag_proto)
  (preprocess (pps ppx_deriving.show))
  (libraries unix))
