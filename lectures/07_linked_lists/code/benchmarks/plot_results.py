@@ -60,7 +60,7 @@ def plot_thread_scaling(csv_file, title, output_file):
                    label=style['label'])
 
     ax.set_xlabel('threads', fontsize=12)
-    ax.set_ylabel('Ops/sec (90% reads/0 load)', fontsize=12)
+    ax.set_ylabel('Ops/sec', fontsize=12)
     ax.set_title(title, fontsize=14, fontweight='bold')
     ax.legend(loc='upper left', fontsize=10)
     ax.grid(True, alpha=0.3)
@@ -95,7 +95,7 @@ def plot_varying_contains(csv_file, output_file):
                    label=style['label'])
 
     ax.set_xlabel('% Contains()', fontsize=12)
-    ax.set_ylabel('Ops/sec (24 threads/0 load)', fontsize=12)
+    ax.set_ylabel('Ops/sec', fontsize=12)
     ax.set_title('As Contains Ratio Increases', fontsize=14, fontweight='bold')
     ax.legend(loc='upper left', fontsize=10)
     ax.grid(True, alpha=0.3)
@@ -124,7 +124,7 @@ def main():
     if high_csv.exists():
         plot_thread_scaling(
             high_csv,
-            'High Contains Ratio',
+            '90% Contains Ratio',
             results_dir / 'plot_high_contains.png'
         )
     else:
@@ -135,7 +135,7 @@ def main():
     if low_csv.exists():
         plot_thread_scaling(
             low_csv,
-            'Low Contains Ratio',
+            '50% Contains Ratio',
             results_dir / 'plot_low_contains.png'
         )
     else:
