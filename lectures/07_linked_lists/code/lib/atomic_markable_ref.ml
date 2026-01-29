@@ -18,6 +18,11 @@ let get_mark amr =
   let mr = Atomic.get amr in
   mr.marked
 
+let get amr marked =
+  let mr = Atomic.get amr in
+  marked := mr.marked;
+  mr.reference
+
 let compare_and_set amr ~expected_ref ~new_ref ~expected_mark ~new_mark =
   let current = Atomic.get amr in
   (* Check if current state matches expected using physical equality for references *)

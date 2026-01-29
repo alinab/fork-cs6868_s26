@@ -50,12 +50,12 @@ let create () =
     with pred.key < key <= curr.key
 *)
 let locate head key =
+  let is_marked = ref false in
   let rec retry pred =
     let curr = AMR.get_reference pred.next in
     let rec advance pred curr =
-      let succ = AMR.get_reference curr.next in
-      let marked = AMR.get_mark curr.next in
-      if marked then
+      let succ = AMR.get curr.next is_marked in
+      if !is_marked then
         if AMR.compare_and_set pred.next
             ~expected_ref:curr ~new_ref:succ
             ~expected_mark:false ~new_mark:false then
@@ -79,7 +79,10 @@ let add list item =
     if curr.key = key then false
     else
       let node = { item = Some item; key; next = AMR.create curr false } in
-      if AMR.compare_and_set pred.next ~expected_ref:curr ~new_ref:node ~expected_mark:false ~new_mark:false then true
+      if AMR.compare_and_set pred.next
+           ~expected_ref:curr ~new_ref:node
+           ~expected_mark:false ~new_mark:false
+      then true
       else attempt ()
   in
   attempt ()
@@ -92,10 +95,15 @@ let remove list item =
     if not (curr.key == key) then false
     else
       let succ = AMR.get_reference curr.next in
-      if AMR.compare_and_set curr.next ~expected_ref:succ ~new_ref:succ ~expected_mark:false ~new_mark:true then (
-        ignore (AMR.compare_and_set pred.next ~expected_ref:curr ~new_ref:succ ~expected_mark:false ~new_mark:false);
+      if AMR.compare_and_set curr.next
+           ~expected_ref:succ ~new_ref:succ
+           ~expected_mark:false ~new_mark:true
+      then begin
+        ignore (AMR.compare_and_set pred.next
+                  ~expected_ref:curr ~new_ref:succ
+                  ~expected_mark:false ~new_mark:false);
         true
-      ) else
+      end else
         attempt ()
   in
   attempt ()
@@ -104,10 +112,10 @@ let remove list item =
 let contains list item =
   let key = Hashtbl.hash item in
   (* Direct traversal without helping for better performance on read-heavy workloads *)
+  let is_marked = ref false in
   let rec loop curr =
-    let next_node = AMR.get_reference curr.next in
-    let is_marked = AMR.get_mark curr.next in
-    if is_marked then
+    let next_node = AMR.get curr.next is_marked in
+    if !is_marked then
       (* Skip marked nodes *)
       loop next_node
     else if curr.key < key then
