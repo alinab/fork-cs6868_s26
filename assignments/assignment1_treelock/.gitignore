@@ -1,0 +1,31 @@
+# Generated student template (regenerate with generate_student_template.py)
+student_template/
+
+# Assignment handout (LaTeX - optional, not used in student template)
+assignment.tex
+assignment.pdf
+
+# Autograder output files
+autograder/grading_report.json
+autograder/grading_report.txt
+autograder/solution_test.json
+autograder/solution_test.txt
+autograder/*.json
+autograder/*.txt
+
+# LaTeX artifacts
+*.aux
+*.log
+*.out
+*.toc
+*.pdf
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+
+# Editor files
+*~
+.*.swp
+.*.swo
+*.bak
+.DS_Store
