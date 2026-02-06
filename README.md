@@ -20,7 +20,7 @@ with a focus on shared-memory multiprocessor systems. Topics include:
 - Practical implementations using OCaml 5's multicore features
 - Safe parallel programming with OxCaml
 
-The course uses OCaml 5 with itts native support for parallelism via
+The course uses OCaml 5 with its native support for parallelism via
 [domains](https://ocaml.org/manual/5.4/api/Domain.html) and concurrency via
 [effect handlers](https://ocaml.org/manual/5.4/api/Effect.html).
 
