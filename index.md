@@ -46,12 +46,15 @@ hands-on experience with modern concurrent programming techniques.
   + Wed: 0900
   + Thu: 1200
 - **Slack**: [https://cs6868s26iitm.slack.com](https://cs6868s26iitm.slack.com)
-- **Moodle**:
+- **Moodle**: [https://courses.iitm.ac.in/course/view.php?id=11146](https://courses.iitm.ac.in/course/view.php?id=11146)
 - **TAs:**
 
-| Name | Email (@smail.iitm.ac.in) |
-|------|---------------------------|
-|      |                           |
+| Name              | Email (@smail.iitm.ac.in) |
+| ----------------- | ------------------------- |
+| Abdun Nihaal      | cs23d008@smail.iitm.ac.in |
+| Md. Isfarul Haque | cs22b010@smail.iitm.ac.in |
+| Dhanush           | cs24m047@smail.iitm.ac.in |
+| Mustaq            | cs24m045@smail.iitm.ac.in |
 
 Liaise with the TAs over email about where to meet.
 

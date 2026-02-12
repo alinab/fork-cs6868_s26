@@ -21,10 +21,10 @@ let create capacity =
   }
 
 let enq q x =
-  Mutex.lock q.lock;
   try
     if q.tail - q.head = q.capacity then
       raise Full;
+    Mutex.lock q.lock;
     q.items.(q.tail mod q.capacity) <- Some x;
     q.tail <- q.tail + 1;
     Mutex.unlock q.lock
