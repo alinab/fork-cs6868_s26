@@ -7,10 +7,11 @@ banner_link: https://visitesfabienne.org/art-deco-chennai/
 banner_credit: "Photo © Les visites de Fabienne"
 ---
 
-| Assignment   | Due Date |
-|:------------:|----------|
+| Assignment   | Due Date   |
+|:------------:|:----------:|
+| Tree Lock    | 2024-02-19 |
 
-<br>
+<br/>
 
 ## Assignment late penalties
 
@@ -56,9 +57,9 @@ original work.**
 - All students must sign an Honour Code at the start of the course.
 - Submissions will be subject to automated plagiarism checks.
 
-### Research Mini Project (Groups of 2)
+### Research Mini Project (Groups of 3)
 
-- The research mini project is done in **groups of 2**.
+- The research mini project is done in **groups of 3**.
 - **You may use LLMs** for the research mini project—they make you productive when exploring research problems.
 - You must cite any AI tools or external sources you use, and clearly indicate what parts of your work were influenced by them.
 - You are still responsible for understanding and being able to explain all submitted work.
