@@ -210,7 +210,7 @@ Your assignment will be graded on:
 
 ## Submission
 
-Submit the following files:
+Submit a single `.zip` file containing the following files at the top level (not inside a folder):
 
 - `TreeLock.ml`
 - `Test.ml`
