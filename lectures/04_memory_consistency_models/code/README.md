@@ -101,6 +101,21 @@ dune build peterson_race.exe
 dune exec ./peterson_race.exe
 ```
 
+### Troubleshooting TSAN Errors
+
+If you encounter a TSAN error like:
+
+```text
+FATAL: ThreadSanitizer: unexpected memory mapping 0x...
+```
+
+This happens when TSAN encounters memory regions at addresses it cannot instrument, often due to Address Space Layout Randomization (ASLR). To work around this, disable ASLR when running the program:
+
+```bash
+# Run with ASLR disabled
+setarch $(uname -m) -R dune exec ./peterson_race.exe
+```
+
 ### Expected Output
 
 The program will show TSAN warnings about data races in the `lock` function:
