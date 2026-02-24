@@ -7,9 +7,10 @@ banner_link: https://visitesfabienne.org/art-deco-chennai/
 banner_credit: "Photo © Les visites de Fabienne"
 ---
 
-| Assignment   | Due Date   |
-|:------------:|:----------:|
-| Tree Lock    | 2024-02-19 |
+| Assignment      | Due Date   |
+|:---------------:|:----------:|
+| Tree Lock       | 2024-02-19 |
+| Atomic Snapshot | 2024-03-10 |
 
 <br/>
 
