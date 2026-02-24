@@ -1,0 +1,22 @@
+; Library: atomic snapshot implementation
+(library
+ (name snapshot)
+ (modules Snapshot))
+
+; Executable: manual concurrent tests
+(executable
+ (name test_manual)
+ (modules test_manual)
+ (libraries snapshot))
+
+; Executable: QCheck-Lin linearizability test
+(executable
+ (name qcheck_lin_snapshot)
+ (modules qcheck_lin_snapshot)
+ (libraries snapshot qcheck-lin.domain))
+
+; Executable: QCheck-STM state machine test
+(executable
+ (name qcheck_stm_snapshot)
+ (modules qcheck_stm_snapshot)
+ (libraries snapshot qcheck-stm.domain qcheck-stm.sequential))
