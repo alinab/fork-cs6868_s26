@@ -252,7 +252,7 @@ You need OCaml with TSAN support:
 sudo sysctl -w kernel.randomize_va_space=0
 
 # Install TSAN-enabled compiler
-opam switch create 5.4.0+tsan ocaml-option-tsan
+opam switch create 5.4.0+tsan ocaml-variants.5.4.0+options ocaml-option-tsan
 eval $(opam env)
 ```
 
