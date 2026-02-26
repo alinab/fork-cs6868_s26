@@ -94,7 +94,7 @@ This example requires an OCaml compiler with ThreadSanitizer support:
 
 ```bash
 # First, install TSAN-enabled OCaml compiler
-opam switch create 5.4.0+tsan ocaml-option-tsan
+opam switch create 5.4.0+tsan ocaml-variants.5.4.0+options ocaml-option-tsan
 
 # Build and run
 dune build peterson_race.exe
