@@ -1,0 +1,30 @@
+(executable
+ (name test_bounded_queue)
+ (modules test_bounded_queue)
+ (libraries bounded_queue unix))
+
+(executable
+ (name test_bounded_queue_split_counter)
+ (modules test_bounded_queue_split_counter)
+ (libraries bounded_queue_split_counter unix))
+
+(executable
+ (name qcheck_lin_bounded_queue)
+ (modules qcheck_lin_bounded_queue)
+ (libraries bounded_queue qcheck-lin.domain))
+
+(executable
+ (name qcheck_lin_bounded_queue_split_counter)
+ (modules qcheck_lin_bounded_queue_split_counter)
+ (libraries bounded_queue_split_counter qcheck-lin.domain))
+
+(executable
+ (name qcheck_stm_bounded_queue)
+ (modules qcheck_stm_bounded_queue)
+ (libraries bounded_queue qcheck-stm.sequential qcheck-stm.domain qcheck-multicoretests-util))
+
+(executable
+ (name qcheck_stm_bounded_queue_split_counter)
+ (modules qcheck_stm_bounded_queue_split_counter)
+ (libraries bounded_queue_split_counter qcheck-stm.sequential qcheck-stm.domain qcheck-multicoretests-util))
+
