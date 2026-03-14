@@ -9,3 +9,7 @@
 (library
  (name lockfree_queue)
  (modules lockfree_queue))
+
+(library
+ (name lockfree_stack)
+ (modules lockfree_stack))

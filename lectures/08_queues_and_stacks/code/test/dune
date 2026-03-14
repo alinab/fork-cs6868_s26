@@ -43,3 +43,18 @@
  (modules qcheck_stm_lockfree_queue)
  (libraries lockfree_queue qcheck-stm.sequential qcheck-stm.domain qcheck-multicoretests-util))
 
+(executable
+ (name test_lockfree_stack)
+ (modules test_lockfree_stack)
+ (libraries lockfree_stack unix))
+
+(executable
+ (name qcheck_lin_lockfree_stack)
+ (modules qcheck_lin_lockfree_stack)
+ (libraries lockfree_stack qcheck-lin.domain))
+
+(executable
+ (name qcheck_stm_lockfree_stack)
+ (modules qcheck_stm_lockfree_stack)
+ (libraries lockfree_stack qcheck-stm.sequential qcheck-stm.domain qcheck-multicoretests-util))
+
