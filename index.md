@@ -40,7 +40,7 @@ hands-on experience with modern concurrent programming techniques.
 
 - **Instructor:** [KC Sivaramakrishnan](http://kcsrk.info), who goes by "KC".
 - **Where:** CS26
-- **When:**
+- **When:** D slot
   + Mon: 1100
   + Tue: 1000
   + Wed: 0900
