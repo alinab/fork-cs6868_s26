@@ -62,17 +62,17 @@ end = struct
     handler init
 end
 
-module IS = StateFn (struct type t = int end)
+module ISFn = StateFn (struct type t = int end)
 
 let comp2 () =
-  Printf.printf "initial: %d\n" (IS.get ());
-  IS.set 42;
-  Printf.printf "after set: %d\n" (IS.get ());
+  Printf.printf "initial: %d\n" (ISFn.get ());
+  ISFn.set 42;
+  Printf.printf "after set: %d\n" (ISFn.get ());
   IS.set 100;
   Printf.printf "after second set: %d\n" (IS.get ())
 
 let () =
-  let final_state, () = IS.run 0 comp2 in
+  let final_state, () = ISFn.run 0 comp2 in
   Printf.printf "final state: %d\n" final_state
 
 (* Output:

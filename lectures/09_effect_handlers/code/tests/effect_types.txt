@@ -1,0 +1,29 @@
+module Effect : sig
+  type _ t = ..
+  (** The type of effects. *)
+
+  val perform : 'a t -> 'a
+  (** [perform e] performs the effect [e], which is handled by the nearest
+      enclosing handler for that effect. *)
+
+  module Deep : sig
+    type ('a, 'b) continuation
+    (** The type of continuations for deep handlers.  A value of type
+        [('a, 'b) continuation] represents the rest of the computation
+        after the point where an effect is performed, with the ability to
+        resume it by providing a value of type ['a] and yielding a result
+        of type ['b]. *)
+
+    val continue : ('a, 'b) continuation -> 'a -> 'b
+    (** [continue k v] resumes the continuation [k] with value [v]. *)
+
+    val discontinue : ('a, 'b) continuation -> exn -> 'b
+    (** [discontinue k exn] resumes the continuation [k] by raising [exn]. *)
+  end
+
+  exception Unhandled: 'a t -> exn
+  (** Raised by [perform] when no handler is found for the performed effect. *)
+
+  exception Continuation_already_resumed
+  (** Raised by [continue] when the continuation has already been resumed. *)
+end

@@ -40,3 +40,11 @@
 (executable
  (name nondeterminism)
  (libraries multicont))
+
+(executable
+ (name sched_test)
+ (libraries sched))
+
+(executable
+ (name domains_vs_fibers)
+ (libraries sched unix))
