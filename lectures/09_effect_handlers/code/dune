@@ -12,4 +12,31 @@
 
 (executable
  (name test5)
- (ocamlopt_flags (:standard -w -38)))
+ (flags (:standard -w -38)))
+
+(executable
+ (name test6)
+ (flags (:standard -w -38)))
+
+(executable
+ (name test7))
+
+(executable
+ (name test8))
+
+(executable
+ (name test9))
+
+(executable
+ (name exception)
+ (flags (:standard -w -21-33)))
+
+(executable
+ (name reader))
+
+(executable
+ (name state))
+
+(executable
+ (name nondeterminism)
+ (libraries multicont))
