@@ -1,0 +1,23 @@
+(executable
+ (name promise_test)
+ (libraries golike_multicore unix))
+
+(executable
+ (name ivar_bench)
+ (libraries golike_multicore unix))
+
+(executable
+ (name fib)
+ (libraries golike_multicore unix))
+
+(executable
+ (name fib_cutoff_bench)
+ (libraries golike_multicore unix))
+
+(executable
+ (name qsort)
+ (libraries golike_multicore unix))
+
+(executable
+ (name qsort_bench)
+ (libraries golike_multicore unix))

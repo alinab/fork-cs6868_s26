@@ -42,4 +42,4 @@
  (libraries multicont))
 
 (executable
- (name tree_generator))
+ (name generator))

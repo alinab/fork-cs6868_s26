@@ -33,7 +33,7 @@ let example_tree =
     1,
     Node (Leaf, 3, Node (Leaf, 6, Leaf)))
 
-(* ---------- Internal iterator (push-based) ---------- *)
+(* ---------- Internal iterators (push-based) ---------- *)
 
 let rec iter t f = match t with
   | Leaf -> ()
@@ -41,6 +41,14 @@ let rec iter t f = match t with
     iter l f;
     f x;
     iter r f
+
+(* Iterate over fringe (leaf) elements only *)
+let rec iter_leaves t f = match t with
+  | Leaf -> ()
+  | Node (Leaf, x, Leaf) -> f x
+  | Node (l, _, r) ->
+    iter_leaves l f;
+    iter_leaves r f
 
 (* ---------- Generator via effect handlers ---------- *)
 
@@ -77,13 +85,25 @@ let print_all next =
   in
   go ()
 
-(* ---------- Same-fringe test: two trees have the same leaves ---------- *)
+(* ---------- Same-fringe problem ---------- *)
 
-let rec same_fringe next1 next2 =
-  match next1 (), next2 () with
-  | None, None -> true
-  | Some v1, Some v2 -> v1 = v2 && same_fringe next1 next2
-  | _ -> false
+(* Two binary trees have the same fringe if they have exactly the same
+ * leaves reading from left to right.  A leaf is a node whose children
+ * are both [Leaf] (empty).
+ *
+ * Using generators: walk both trees lazily, compare leaf-by-leaf,
+ * stop at the first mismatch. *)
+
+let same_fringe t1 t2 =
+  let next1 = to_gen (iter_leaves t1) in
+  let next2 = to_gen (iter_leaves t2) in
+  let rec go () =
+    match next1 (), next2 () with
+    | None, None -> true
+    | Some v1, Some v2 -> v1 = v2 && go ()
+    | _ -> false
+  in
+  go ()
 
 (* ====================================================================== *)
 
@@ -118,24 +138,101 @@ let () =
 
 (* Test 3: Same-fringe problem
  *
- * Two differently shaped trees with the same in-order traversal:
+ * Fringe = the sequence of leaf values (nodes whose children are both
+ * Leaf), read left-to-right.  Two trees have the same fringe iff their
+ * leaf sequences are identical, regardless of tree shape.
  *
- *    tree_a:       tree_b:
- *       2            1
- *      / \          / \
- *     1   3        2   3
+ * Example — two differently shaped trees with the *same* fringe {3,7,20}:
  *
- * Both yield 1, 2, 3 in-order.
+ *    tree_a:               tree_b:
+ *         10                    8
+ *        /  \                  / \
+ *       5    15               6   12
+ *      / \     \             /   /  \
+ *     3   7    20           3   7    20
+ *
+ * tree_a fringe: 3, 7, 20
+ * tree_b fringe: 3, 7, 20   — same!
  *)
 let () =
   Printf.printf "\n=== Same-fringe test ===\n";
-  let tree_a = Node (Node (Leaf, 1, Leaf), 2, Node (Leaf, 3, Leaf)) in
-  let tree_b = Node (Leaf, 1, Node (Leaf, 2, Node (Leaf, 3, Leaf))) in
-  let tree_c = Node (Leaf, 1, Node (Leaf, 4, Node (Leaf, 3, Leaf))) in
-  Printf.printf "  tree_a = tree_b? %b\n" (same_fringe (to_gen (iter tree_a)) (to_gen (iter tree_b)));
-  Printf.printf "  tree_a = tree_c? %b\n" (same_fringe (to_gen (iter tree_a)) (to_gen (iter tree_c)))
+  (*         10
+   *        /  \
+   *       5    15
+   *      / \     \
+   *     3   7    20
+   *    Fringe: 3, 7, 20
+   *)
+  let tree_a =
+    Node (
+      Node (Node (Leaf, 3, Leaf), 5, Node (Leaf, 7, Leaf)),
+      10,
+      Node (Leaf, 15, Node (Leaf, 20, Leaf)))
+  in
+  (*     8
+   *    / \
+   *   6   12
+   *  /   /  \
+   * 3   7    20
+   * Fringe: 3, 7, 20  — same as tree_a!
+   *)
+  let tree_b =
+    Node (
+      Node (Node (Leaf, 3, Leaf), 6, Leaf),
+      8,
+      Node (Node (Leaf, 7, Leaf), 12, Node (Leaf, 20, Leaf)))
+  in
+  (*         10
+   *        /  \
+   *       5    15
+   *      / \     \
+   *     3   7    99
+   *    Fringe: 3, 7, 99  — differs at last leaf
+   *)
+  let tree_c =
+    Node (
+      Node (Node (Leaf, 3, Leaf), 5, Node (Leaf, 7, Leaf)),
+      10,
+      Node (Leaf, 15, Node (Leaf, 99, Leaf)))
+  in
+  Printf.printf "  tree_a = tree_b? %b\n" (same_fringe tree_a tree_b);
+  Printf.printf "  tree_a = tree_c? %b\n" (same_fringe tree_a tree_c);
+  Printf.printf "  tree_b = tree_c? %b\n" (same_fringe tree_b tree_c)
 (* Output:
   === Same-fringe test ===
     tree_a = tree_b? true
     tree_a = tree_c? false
+*)
+
+(* Test 4: Python-style generator from an imperative function
+ *
+ * [numbers n yield] pushes 0, then pairs (i, -i) for i = 1..n.
+ * Wrapping with [to_gen] turns it into a pull-based generator. *)
+let () =
+  Printf.printf "\n=== Python-style generator ===\n";
+  let numbers n yield =
+    yield 0;
+    for i = 1 to n do
+      yield i; yield (-i)
+    done
+  in
+  let next = to_gen (numbers 10) in
+  let rec go () =
+    match next () with
+    | None -> ()
+    | Some v ->
+        Printf.printf "  %d\n" v;
+        go ()
+  in
+  go ()
+(* Output:
+  === Python-style generator ===
+    0
+    1
+    -1
+    2
+    -2
+    ...
+    10
+    -10
 *)
