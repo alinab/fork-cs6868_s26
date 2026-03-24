@@ -83,6 +83,7 @@ by the topic approval deadline.
 22. [Memory Reclamation — Hazard Pointers and Epoch-Based Reclamation](#project-22-memory-reclamation--hazard-pointers-and-epoch-based-reclamation)
 23. [Synchronous Dual Queue](#project-23-synchronous-dual-queue)
 24. [Elimination-Based Concurrent Data Structures Beyond Stacks](#project-24-elimination-based-concurrent-data-structures-beyond-stacks)
+25. [Practical Lock-Free to Wait-Free Transformation](#project-25-practical-lock-free-to-wait-free-transformation)
 
 Below are suggested project ideas. You are free to propose your own topic
 (subject to instructor approval). If you are presenting a new project topic,
@@ -1348,3 +1349,46 @@ sensitive is the elimination success rate to array sizing and timeout parameters
 - N. Shavit, D. Touitou, "Elimination Trees and the Construction of Pools and Stacks," *Theory of Computing Systems*, 1997
 - Y. Afek, G. Korland, E. Yanovsky, "Quasi-Linearizability: Relaxed Consistency for Improved Concurrency," *OPODIS*, 2010
 - AoMPP Chapter 11 (Stacks and Elimination)
+
+---
+
+## Project 25: Practical Lock-Free to Wait-Free Transformation
+
+### Background
+
+This project studies a method for transforming normalized form lock-free data
+structures into wait-free ones. The focus is the method itself, not just the
+particular data structures used to test it. Compared with universal
+construction, the attraction is that it starts from an existing lock-free
+design and transforms it directly. The paper reports implementations that are
+"only a few percent slower than their lock-free counterparts," while still
+providing wait-free guarantees.
+
+### Tasks
+
+1. Study the normalized form requirements and identify what information the
+   transformation needs from a lock-free implementation.
+2. Work through the paper's procedure on the lock-free stack and queue from
+   class, deriving wait-free versions by hand.
+3. Implement or adapt hand-crafted wait-free versions of the same structures
+   for comparison.
+4. Implement a universal construction baseline for the same interfaces.
+5. Verify correctness using **QCheck-Lin** against sequential stack and queue
+   models.
+6. Run **TSAN** on the transformed, hand-crafted, and universal construction
+   implementations.
+7. Benchmark the transformed, hand-crafted, and universal construction
+   implementations to compare their performance costs.
+8. **(Optional)** Design a small DSL for describing normalized lock-free
+   algorithms and use it to generate scaffolding for their wait-free
+   translations.
+
+### Research Question
+
+How well does the normalized form capture practical lock-free data structures,
+and what does the transformation cost compared with hand-crafted wait-free
+implementations and universal construction?
+
+### References
+
+- S. Timnat, E. Petrank, "A Practical Wait-Free Simulation for Lock-Free Data Structures," *PPoPP*, 2014. DOI: https://doi.org/10.1145/2555243.2555261
