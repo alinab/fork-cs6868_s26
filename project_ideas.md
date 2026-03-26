@@ -83,6 +83,7 @@ by the topic approval deadline.
 22. [Memory Reclamation — Hazard Pointers and Epoch-Based Reclamation](#project-22-memory-reclamation--hazard-pointers-and-epoch-based-reclamation)
 23. [Synchronous Dual Queue](#project-23-synchronous-dual-queue)
 24. [Elimination-Based Concurrent Data Structures Beyond Stacks](#project-24-elimination-based-concurrent-data-structures-beyond-stacks)
+25. [Left-Right — A Concurrency Control Alternative to Reader-Writer Locks](#project-25-left-right--a-concurrency-control-alternative-to-reader-writer-locks)
 
 Below are suggested project ideas. You are free to propose your own topic
 (subject to instructor approval). If you are presenting a new project topic,
@@ -1348,3 +1349,66 @@ sensitive is the elimination success rate to array sizing and timeout parameters
 - N. Shavit, D. Touitou, "Elimination Trees and the Construction of Pools and Stacks," *Theory of Computing Systems*, 1997
 - Y. Afek, G. Korland, E. Yanovsky, "Quasi-Linearizability: Relaxed Consistency for Improved Concurrency," *OPODIS*, 2010
 - AoMPP Chapter 11 (Stacks and Elimination)
+
+---
+
+## Project 25: Left-Right — A Concurrency Control Alternative to Reader-Writer Locks
+
+**Difficulty: ★★★☆☆** — The core algorithm is conceptually elegant but requires careful coordination of version counters, toggle bits, and memory reclamation.
+
+### Background
+
+Reader-writer locks allow concurrent reads but block readers during writes,
+and under heavy read loads the writer can starve or readers pay non-trivial
+synchronisation costs. The **Left-Right** concurrency control technique
+eliminates this trade-off: readers never block — not even when a write is in
+progress — and writers see a consistent, atomic view of their mutations. The
+idea is to maintain **two copies** of the data structure (left and right).
+Readers pick one copy based on a version indicator and read without locking.
+A writer mutates the unused copy, flips the version indicator so new readers
+go to the freshly updated copy, waits for existing readers on the old copy to
+finish, and then applies the same mutation to the old copy. The result is
+wait-free population-oblivious reads with blocking (but not starving) writes.
+
+Left-Right is a practical alternative to reader-writer locks (Lecture 06) and
+shares motivation with RCU and seqlocks, but offers a different point in the
+design space: unlike RCU it does not require deferred reclamation of old
+versions, and unlike seqlocks readers never need to retry.
+
+### Tasks
+
+1. Implement the **classical Left-Right algorithm** in OCaml 5, using `Atomic`
+   operations and per-reader arrival/departure counters. The implementation
+   should be generic over the inner data structure (e.g., a hash table, sorted
+   list, or tree).
+2. Instantiate your Left-Right wrapper around a **concurrent hash map** (or
+   similar dictionary structure) so that reads are wait-free and writes
+   serialise through the Left-Right protocol.
+3. Implement a **reader-writer lock** baseline (e.g., from Lecture 06 or the
+   standard library) wrapping the same inner data structure.
+4. Verify correctness using **QCheck-Lin**: the sequential specification is the
+   underlying data structure; concurrent operations should be linearizable.
+5. Run **TSAN** to confirm the absence of data races.
+6. Benchmark Left-Right vs. the reader-writer lock under **read-dominated**
+   (95–99% reads), **balanced** (50/50), and **write-heavy** (50%+ writes)
+   workloads across 1–8 threads. Measure read throughput, write latency, and
+   tail latency (p99).
+7. Measure the **memory overhead** of maintaining two copies and quantify the
+   trade-off: at what read/write ratio does Left-Right's extra memory pay for
+   itself in throughput?
+8. **(Stretch goal)** Implement a **distributed version-counter** variant that
+   reduces contention on the reader counters by sharding them across cache
+   lines (similar to the approach in `jonhoo/left-right`).
+
+### Research Question
+
+Under what workload conditions (read/write ratio, thread count, data-structure
+size) does Left-Right's zero-cost reads outweigh the memory and write-side
+overhead compared to a reader-writer lock?
+
+### References
+
+- P. Ramalhete, A. Correia, "Left-Right: A Concurrency Control Technique with Wait-Free Population-Oblivious Reads," *Concurrency Freaks*, 2013: <https://concurrencyfreaks.blogspot.com/2013/12/left-right-classical-algorithm.html>
+- J. Gjengset, `left-right` — a Rust implementation of Left-Right for high-performance concurrent reads: <https://github.com/jonhoo/left-right>
+- J. Gjengset, "Partial State in Dataflow-Based Materialized Views," PhD thesis, MIT, 2021, §5 "Fast Reads" (p. 75) — applies left-right to double-buffered hash tables for wait-free reads in the Noria database: <https://jon.thesquareplanet.com/papers/phd-thesis.pdf>
+- C. Sherborne, "Making My Concurrent Algorithm 6000% Better," *dev.to*: <https://dev.to/charlietap/making-my-concurrent-algorithm-6000-better-24oo>
