@@ -23,7 +23,7 @@ Follow the official [OCaml installation guide](https://ocaml.org/docs/install.ht
 bash -c "sh <(curl -fsSL https://opam.ocaml.org/install.sh)"
 opam init
 opam switch create 5.4.0
-opam install ocaml-lsp-server ocamlformat utop domainslib qcheck-lin qcheck-stm
+opam install ocaml-lsp-server.1.24.0 ocamlformat.0.28.1 utop.2.16.0 qcheck-lin.0.10 qcheck-stm.0.10
 ```
 
 **Windows Users:** Use WSL (Windows Subsystem for Linux) for best compatibility.

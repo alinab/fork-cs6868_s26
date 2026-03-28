@@ -3,7 +3,6 @@ open Golike_multicore_select
 (** Build a [Select.event] that fires after [delay] seconds.
     Uses the native [Io.timeout_evt] so the timer only starts when
     [Select.select] synchronises on it — not at event creation time. *)
-let timeout_evt delay = Io.timeout_evt delay
 
 (** Sender: sends integers 0..n-1 on [ch], one per second, then stops. *)
 let sender ch n =
@@ -23,7 +22,7 @@ let receiver ch n =
     (match
       Select.select
         [ Chan.recv_evt ch   |> Select.wrap (fun v  -> `Msg v)
-        ; timeout_evt 0.5   |> Select.wrap (fun () -> `Timeout)
+        ; Io.timeout_evt 0.5   |> Select.wrap (fun () -> `Timeout)
         ]
     with
     | `Msg v  -> Printf.printf "[receiver] msg %d\n%!" v; incr received
