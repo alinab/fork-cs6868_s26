@@ -1,0 +1,5 @@
+(library
+ (name ws_deque)
+ (modules circular_array deque)
+ (ocamlopt_flags (:standard -O3)))
+
