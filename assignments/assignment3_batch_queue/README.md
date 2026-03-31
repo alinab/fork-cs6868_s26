@@ -269,6 +269,7 @@ Submit a single `.zip` file containing the following files at the top level (not
 
 ### Course Materials
 
+- Lecture 8: Queues and Stacks
 - Lecture 6: Monitors and Condition Variables
 - Lecture 3: Concurrent Objects (QCheck-Lin, QCheck-STM)
 
