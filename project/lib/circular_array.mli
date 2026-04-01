@@ -1,4 +1,4 @@
-(** The type of the circular array that holds elements of type 'a y *)
+(** The type of the circular array that holds elements of type 'a t *)
 type 'a t = {
     log_size : int;
     (** The size of the array in log 2. The Chase-Lev algorithm chooses not
@@ -10,13 +10,12 @@ type 'a t = {
         *)
     segment : 'a option array;
     (** segment is the actual/physical array that implements the abstract
-       CircularArray. Itris a historical artifact from previous papers on
+       CircularArray. It is a historical artifact from previous papers on
        the topic, where "segments" referred to a linked list array
        segments (pieces). In the Chase-Lev algorithm there is just one array
        that is used to implement the dynamic, circular array.
        *)
 }
-
 
 (** [create log_size] creates a circular array with size = 2 ^ log_size.
     Each array element is initialized to None. *)
@@ -30,9 +29,8 @@ val size : 'a t -> int
     use of mod (%): logical index % array size *)
 val get_item : 'a t -> int -> 'a
 
-
-(** [put_item array idx item] puts item at idx. With cyclic indexing with
-    mod (%) (logical index % array size), the index is guaranteed to a value
+(** [put_item array idx item] puts item at idx. With cyclic indexing using
+    modulo (logical index % array size), the index is guaranteed to a value
     between 0 and array size - 1 *)
 val put_item : 'a t -> int -> 'a -> unit
 
@@ -46,3 +44,8 @@ val put_item : 'a t -> int -> 'a -> unit
     dequeue remain the same.
  **)
 val grow : 'a t -> bottom:int -> top:int -> 'a t
+
+(** shrink is the dual of grow and decrements the value of 'log_size' of
+    the current array by 1, then uses this new size to create an array
+    shrunk to the new size *)
+val shrink : 'a t -> bottom:int -> top:int -> 'a t
