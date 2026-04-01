@@ -28,3 +28,10 @@ let grow _array ~bottom ~top =
         put_item new_array i (get_item _array i)
     done;
     new_array
+
+let shrink _array ~bottom ~top =
+    let shrunk_array = create (_array.log_size - 1) in
+    for i = top to bottom - 1 do
+        put_item shrunk_array i (get_item _array i)
+    done;
+    shrunk_array
