@@ -85,6 +85,7 @@ by the topic approval deadline.
 24. [Elimination-Based Concurrent Data Structures Beyond Stacks](#project-24-elimination-based-concurrent-data-structures-beyond-stacks)
 25. [Practical Lock-Free to Wait-Free Transformation](#project-25-practical-lock-free-to-wait-free-transformation)
 26. [Left-Right — A Concurrency Control Alternative to Reader-Writer Locks](#project-26-left-right--a-concurrency-control-alternative-to-reader-writer-locks)
+27. [Allocation-Free Semi-Space GC for a C Runtime Using OxCaml Allocation-Free Semantics](#project-27-allocation-free-semi-space-gc-for-a-c-runtime-using-oxcaml-allocation-free-semantics)
 
 Below are suggested project ideas. You are free to propose your own topic
 (subject to instructor approval). If you are presenting a new project topic,
@@ -1454,3 +1455,54 @@ overhead compared to a reader-writer lock?
 - J. Gjengset, `left-right` — a Rust implementation of Left-Right for high-performance concurrent reads: <https://github.com/jonhoo/left-right>
 - J. Gjengset, "Partial State in Dataflow-Based Materialized Views," PhD thesis, MIT, 2021, §5 "Fast Reads" (p. 75) — applies left-right to double-buffered hash tables for wait-free reads in the Noria database: <https://jon.thesquareplanet.com/papers/phd-thesis.pdf>
 - C. Sherborne, "Making My Concurrent Algorithm 6000% Better," *dev.to*: <https://dev.to/charlietap/making-my-concurrent-algorithm-6000-better-24oo>
+
+---
+
+## Project 27: Allocation-Free Semi-Space GC for a C Runtime Using OxCaml Allocation-Free Semantics
+
+**Difficulty: ★★★★☆** — Implementing a zero-allocation GC requires careful memory management and invariant reasoning; integrating with OxCaml's type system adds complexity.
+
+### Background
+
+Traditional garbage collectors themselves allocate memory during collection (for mark vectors, to-space pointers, etc.), creating a bootstrapping problem: how does the GC allocate memory without triggering itself recursively? This circularity is particularly acute in real-time and embedded systems where allocation predictability is critical. OxCaml (OCaml with Ownership and eXclusive types) is a variant of OCaml 5 that introduces **allocation-free semantics**, a type system that guarantees code marked with `#[alloc_free]` performs no dynamic heap allocation.
+
+This project tackles the challenge of implementing a **fully allocation-free runtime and garbage collector for multithreaded programs** where the managed heap itself is pre-allocated as a fixed-size buffer on the stack (or as static data), and **all code in the runtime operates entirely within zero-allocation constraints**. The runtime must safely handle multiple concurrent threads allocating and executing code without performing any dynamic memory allocation. Rather than allocating GC metadata during collection, all scheduler state, mark bits, copying buffers, and forwarding pointers are housed within this pre-allocated heap region. The reference-tracing algorithm (semi-space copying) must operate as a conservative memory manager that never calls `malloc`/`free` at any point, even under concurrent execution. OxCaml's type system serves as both a proof of correctness and a tool for systematic verification that the entire runtime is truly allocation-free.
+
+A key secondary goal is to demonstrate that a fully stack-allocated, zero-allocation GC can safely support concurrent execution of multiple threads while maintaining correctness and achieving competitive performance compared to traditional allocation-based collectors.
+
+### Tasks
+
+1. Design and implement a **fully stack-allocated heap** for a minimal C runtime: a fixed, pre-allocated buffer that lives as a static global or stack-allocated array. This buffer is partitioned into two semi-spaces ("from-space" and "to-space") and metadata regions for allocation pointers, GC state, and bookkeeping.
+
+2. Implement a **semi-space copying garbage collector in C** that operates entirely within this pre-allocated heap. The collector performs two-phase copying (mark/trace phase, copy phase) without ever calling `malloc`/`free`. All GC state (mark bits, forwarding pointers, todo lists, collection queues) resides in the fixed heap footprint.
+
+3. Ensure the runtime is **thread-safe and allocation-free**: implement proper synchronization (mutexes or atomic operations) for concurrent heap access. Mark the entire runtime (both allocator and **collection phase**) with OxCaml's `#[alloc_free]` attribute. Use the OxCaml type system to verify statically that the allocator and core GC algorithm perform no dynamic memory allocation. Document any unsafe escapes or fallbacks carefully.
+
+4. Implement comprehensive **test suites** demonstrating correctness:
+   - Write OCaml/OxCaml test programs (both single-threaded and concurrent) that allocate objects, create reference cycles, and trigger garbage collection
+   - Use threading primitives to create concurrent threads that simultaneously allocate and trigger collection
+   - Verify that garbage is correctly identified and reclaimed under concurrent execution
+   - Use valgrind or similar memory profiling tools to confirm that no allocations occur in the C runtime and no memory leaks persist
+   - Test allocation failure scenarios (heap exhaustion) and verify graceful handling
+
+5. **Benchmark** the stack-allocated, zero-allocation GC against:
+   - A traditional semi-space collector that allocates GC metadata dynamically
+   - A mark-and-sweep GC with dynamic mark vector allocation
+   - Measure throughput (allocations/collections per unit time), latency, and scalability across varying thread counts (1–8 threads)
+   - Test under concurrent allocation patterns (balanced, allocation-heavy, collection-heavy)
+
+6. Investigate **practical design trade-offs**:
+   - How does the fixed heap buffer size impact the variety and complexity of OCaml programs that can run?
+   - Measure memory utilization and fragmentation during the lifetime of long-running test programs
+   - Evaluate whether the pre-allocated approach is viable for embedded or real-time OCaml applications
+   - Document any heap-size tuning or resizing strategies (e.g., can the buffer be resized at startup but not at runtime)?
+
+### Research Question
+
+Can a fully allocation-free, thread-safe semi-space garbage collector, verified statically using OxCaml's type system, correctly handle concurrent multithreaded programs while achieving competitive throughput and latency compared to traditional allocation-based collectors, and what design trade-offs arise between the fixed heap buffer size and runtime flexibility?
+
+### References
+
+- OxCaml documentation and semantics (particularly the `#[alloc_free]` attribute and its proof obligations): <https://github.com/gasche/oxcaml> or related sources
+- D. A. Moon, "Garbage Collection in Lisp" , foundational work on copying collectors and semi-space designs
+- "The Garbage Collector Handbook: The Art of Automatic Memory Management" by Jones, Hosking, Moss , comprehensive reference on GC algorithms and real-time concerns
