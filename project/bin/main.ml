@@ -1,7 +1,7 @@
-let threshold = 4
+let threshold = ref 0
 
 let rec par_sum ctx arr lo hi =
-  if hi - lo <= threshold then begin
+  if hi - lo <= !threshold then begin
     let s = ref 0 in
     for i = lo to hi - 1 do s := !s + arr.(i) done;
     !s
@@ -15,24 +15,48 @@ let rec par_sum ctx arr lo hi =
     left + right
   end
 
-let () =
-  let n        = 1_000_000 in
+
+let run_experiment ~num_workers ~n ~runs =
   let arr      = Array.init n (fun i -> i + 1) in
   let expected = n * (n + 1) / 2 in
-  let result_fut = Future.create () in
-  let root = Scheduler.Task (fun ctx ->
-    let result = par_sum ctx arr 0 n in
-    Future.fill result_fut result
-  ) in
-  let num_steals = Scheduler.run ~num_workers:16 ~initial_tasks:[root]
-  in
+  let thresholds = [4; 16; 64; 256; 1024] in
+  List.iter (fun t ->
+    threshold := t;
+    let all_correct  = ref true in
+    let steal_counts = Array.init runs (fun _ ->
+      let result_fut = Future.create () in
+      let root = Scheduler.Task (fun ctx ->
+        Future.fill result_fut (par_sum ctx arr 0 n)
+      ) in
+      let steals = Scheduler.run ~num_workers ~initial_tasks:[root] in
+      (match Future.get result_fut with
+      | Some result ->
+          if result <> expected then begin
+            all_correct := false;
+            Printf.printf "  INCORRECT: expected=%d got=%d\n" expected result
+          end
+      | None ->
+          all_correct := false;
+          failwith "result future was never filled");
+      steals
+    ) in
+    let total    = Array.fold_left (+) 0 steal_counts in
+    let avg      = total / runs in
+    let variance = Array.fold_left (fun acc x ->
+      acc + (x - avg) * (x - avg)
+    ) 0 steal_counts / runs in
+    let min_s    = Array.fold_left min max_int steal_counts in
+    let max_s    = Array.fold_left max min_int steal_counts in
+    Printf.printf
+      "threshold=%4d  avg=%4d  min=%4d  max=%4d  variance=%6d  correct=%b\n"
+      t avg min_s max_s variance !all_correct
+  ) thresholds
 
-  match Future.get result_fut with
-  | Some result ->
-      Printf.printf "Expected: %d\n" expected;
-      Printf.printf "Got:      %d\n" result;
-      assert (result = expected);
-      Printf.printf "Correct!\n";
-      Printf.printf "Number of steals:   %d\n" num_steals
-  | None ->
-      failwith "result future was never filled"
+
+let () =
+    let worker_counts = [2; 4; 8; 16] in
+     List.iter (fun w ->
+     Printf.printf "\n=== num_workers=%d ===\n" w;
+     run_experiment ~num_workers:w ~n:1_000_000 ~runs:10
+    ) worker_counts
+
