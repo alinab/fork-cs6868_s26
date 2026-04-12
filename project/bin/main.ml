@@ -8,7 +8,7 @@ let rec par_sum ctx arr lo hi =
   end else begin
     let mid = lo + (hi - lo) / 2 in
     let left_fut = Scheduler.fork ctx (fun ctx -> par_sum ctx arr lo mid) in
-    let right_fut   = Scheduler.fork ctx (fun ctx -> par_sum ctx arr mid hi) in
+    let right_fut = Scheduler.fork ctx (fun ctx -> par_sum ctx arr mid hi) in
         (* par_sum ctx arr mid hi in *)
     let left     = Scheduler.join ctx left_fut in
     let right    = Scheduler.join ctx right_fut in
@@ -24,13 +24,15 @@ let () =
     let result = par_sum ctx arr 0 n in
     Future.fill result_fut result
   ) in
-  Scheduler.run ~num_workers:16 ~initial_tasks:[root];
+  let num_steals = Scheduler.run ~num_workers:16 ~initial_tasks:[root]
+  in
 
   match Future.get result_fut with
   | Some result ->
       Printf.printf "Expected: %d\n" expected;
       Printf.printf "Got:      %d\n" result;
       assert (result = expected);
-      Printf.printf "Correct!\n"
+      Printf.printf "Correct!\n";
+      Printf.printf "Number of steals:   %d\n" num_steals
   | None ->
       failwith "result future was never filled"
