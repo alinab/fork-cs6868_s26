@@ -1,0 +1,3 @@
+(tests
+ (names test_deque)
+ (libraries ws_deque qcheck-lin.domain qcheck-lin.lin qcheck-core))
