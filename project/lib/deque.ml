@@ -21,13 +21,16 @@ let cas_top deque_arr old_top new_top =
 let push_bottom deq task =
    let b = Atomic.get deq.bottom in
    let t = Atomic.get deq.top in
-   let a = ref (Atomic.get deq.active_array) in
-   let size = b - t in
-   if size >= Circular_array.size !a - 1 then begin
-       a := Circular_array.grow !a ~bottom:b ~top:t;
-       Atomic.set deq.active_array !a;
-   end;
-   Circular_array.put_item !a b task;
+   let a = Atomic.get deq.active_array in
+   let a =
+    if b - t >= Circular_array.size a - 1 then begin
+      let new_a = Circular_array.grow a ~bottom:b ~top:t in
+      Atomic.set deq.active_array new_a;
+      new_a
+    end else
+      a
+   in
+   Circular_array.put_item a b task;
    Atomic.set deq.bottom (b + 1)
 
 
