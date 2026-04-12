@@ -1,5 +1,5 @@
 (library
  (name ws_deque)
- (modules circular_array deque)
+ (modules circular_array deque scheduler)
+ (wrapped false)
  (ocamlopt_flags (:standard -O3)))
-
