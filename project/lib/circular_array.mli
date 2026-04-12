@@ -8,7 +8,7 @@ type 'a t = {
         new size is easily calculated by adding 1 to log_size;i shrinking it
         subtracting 1 from making the calculations simple and symmetric
         *)
-    segment : 'a option array;
+    segment : 'a option Atomic.t array;
     (** segment is the actual/physical array that implements the abstract
        CircularArray. It is a historical artifact from previous papers on
        the topic, where "segments" referred to a linked list array

@@ -1,11 +1,11 @@
 type 'a t = {
     log_size : int;
-    segment: 'a option array;
+    segment: 'a option Atomic.t array;
 }
 
 let create log_size = {
     log_size = log_size;
-    segment = Array.init (1 lsl log_size) (fun _ -> None)
+    segment = Array.init (1 lsl log_size) (fun _ -> Atomic.make None)
 }
 
 let size _array = 1 lsl (_array.log_size)
@@ -14,13 +14,14 @@ let size _array = 1 lsl (_array.log_size)
 let get_item _array idx =
     let size = size _array in
     let mod_idx = idx mod size in
-    match _array.segment.(mod_idx) with
+    match Atomic.get _array.segment.(mod_idx) with
     | Some v -> v
     | None -> failwith "Circular_array.get: uninitialized slot"
 
 let put_item _array idx item =
     let size = size _array in
-    let mod_idx = idx mod size in _array.segment.(mod_idx) <- Some item
+    let mod_idx = idx mod size in
+    Atomic.set _array.segment.(mod_idx) (Some item)
 
 let grow _array ~bottom ~top =
     let new_array = create (_array.log_size + 1) in
