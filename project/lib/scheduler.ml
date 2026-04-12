@@ -10,8 +10,8 @@ type task = Task of (ctx -> unit)
    - the pool containing of all deques
    *)
 and ctx = {
-    worker_id : int;
-    pool      : deque_pool
+    pool      : deque_pool;
+    worker_id : int
 }
 
 and
@@ -26,18 +26,26 @@ and
 deque_pool = {
     deques  : task Deque.t array;
     pending : int Atomic.t;
-    size    : int          (* number of domains *)
+    size    : int;          (* number of domains *)
+    next_worker : int Atomic.t
 }
+
+let make_ctx pool worker_id = {
+    pool;
+    worker_id
+}
+
+let run_task (Task tsk) ctx = tsk ctx
 
 (* The policy for stealing across domains is (for now) randomly picking up
    a domain to steal tasks from *)
 let try_steal ctx =
     let init_rand = Random.State.make_self_init () in
-    let victim = ref (Random.State.int init_rand ctx.pool_size) in
+    let victim = ref (Random.State.int init_rand ctx.pool.size) in
 
     (* ensure tasks are stolen from other domains *)
     while !victim = ctx.worker_id do
-        victim := Random.State.int rng ctx.pool.size
+        victim := Random.State.int init_rand ctx.pool.size
     done;
     (* once another victim domain is determined *)
     match Deque.steal ctx.pool.deques.(!victim) with
@@ -64,6 +72,7 @@ let work_until ctx cond =
                                         a domain's own deque is empty or
                                         a previous steal by the current
                                         domain failed *)
+    done
 
 
 let fork ctx f =
@@ -90,4 +99,41 @@ let join ctx fut =
   match Future.get fut with
   | Some v -> v
   | None   -> assert false
+
+
+ (* submit puts the initial task into the pool using a
+  round-robin counter maintained in the pool *)
+let submit pool task =
+    (* select the next worker/domain from the pool; fetch and add
+     as well as modulo the size of the pool ensures that the
+     next submitted task is to a domain within the pool *)
+    let d = (Atomic.fetch_and_add pool.next_worker 1) mod pool.size in
+    Atomic.incr pool.pending;
+    Deque.push_bottom pool.deques.(d) task
+
+
+let create_pool n = {
+     deques = Array.init n (fun _ -> Deque.create 10);
+     pending = Atomic.make 0;
+     size    = n;
+     next_worker = Atomic.make 0
+ }
+
+let work_loop ctx =
+  work_until ctx (fun () -> Atomic.get ctx.pool.pending = 0)
+
+let run ~num_workers ~initial_tasks =
+    let pool = create_pool num_workers in
+
+    List.iter (submit pool) initial_tasks;
+
+    let work_domains = Array.init (num_workers - 1) (fun i ->
+        Domain.spawn (fun () ->
+           work_loop (make_ctx pool (i + 1))
+         )
+     ) in
+     (* current domain becomes worker 0 *)
+     work_loop (make_ctx pool 0);
+     (* wait for all domains *)
+     Array.iter Domain.join work_domains
 
