@@ -60,7 +60,6 @@ let perhaps_shrink deq ~bottom ~top =
 
 let pop_bottom deq =
     let b = Atomic.get deq.bottom - 1 in
-    let a = Atomic.get deq.active_array in
     Atomic.set deq.bottom b;
     let t = Atomic.get deq.top in
     let size = b - t in
@@ -69,6 +68,9 @@ let pop_bottom deq =
         Empty                    (* nothing to return *)
     end
     else
+      (* read active array here to ensure that any changes in
+         array size are accurately reflected *)
+      let a = Atomic.get deq.active_array in
       let task = Circular_array.get_item a b in
       if (size > 0) then begin
           let a' = perhaps_shrink deq ~bottom:b ~top:t
