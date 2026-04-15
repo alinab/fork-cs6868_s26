@@ -1,3 +1,8 @@
 (tests
- (names test_deque)
+ (names test_deque_qcheck_lin)
  (libraries ws_deque qcheck-lin.domain qcheck-lin.lin qcheck-core))
+
+
+(tests
+ (names test_deque_qcheck_stm)
+ (libraries ws_deque qcheck-stm.stm qcheck-stm.domain qcheck-stm.sequential qcheck-core))
