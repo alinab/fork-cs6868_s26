@@ -45,14 +45,15 @@
 % --- Title block --------------------------------------------------------------
 \title{%
   \textbf{CS6868 Research Mini-Project} \\[0.3em]
-  \Large Your Project Title Here%
+  \Large An investigtion into Parallel Task Scheduling using Dynamic
+  Circular Work-stealing Deques (OCaml implementation)
 }
 \author{%
-  Member One \\ \texttt{rollno1@smail.iitm.ac.in}
+  Alina Banerjee \\ \texttt{rollno1@smail.iitm.ac.in}
   \and
-  Member Two \\ \texttt{rollno2@smail.iitm.ac.in}
+  Ankita Das \\ \texttt{rollno2@smail.iitm.ac.in}
   \and
-  Member Three \\ \texttt{rollno3@smail.iitm.ac.in}
+  Dhruvanshi \\ \texttt{rollno3@smail.iitm.ac.in}
 }
 \date{\today}
 
@@ -60,9 +61,33 @@
 \maketitle
 
 \begin{abstract}
-Briefly (150--200 words) describe the problem you tackled, your approach, the
-headline evaluation results, and the main conclusion. Readers (the graders)
-should understand the essence of your project from the abstract alone.
+
+This project attempts to build a user-level task scheduler that can distribute
+tasks across parallel OCaml domains and use the observations across them to measure
+the efficiency of work-stealing across domains. Work-stealing is a paradigm
+where idle domains i.e. domains that have completed tasks allotted to them steal
+tasks from other domains, thus rebalancing loads across domains and speeding up
+overall program execution. At the same time, this introduces contention with
+possibly multiple domains trying to steal from a domain that may be about to
+pick up the same task for execution locally.
+
+[paper] originally introduced this idea of using array-based deques (double-ended
+queues) for managing tasks across multiprocessors. With fixed-size arrays,
+inefficient memory usage and array overflow were the fundamental problems. Our
+implementation is based on [Chase-Lev] which addressed both problems using
+dynamic cyclic arrays:  arrays can grow or shrink as needed and using a cyclic
+array ensures the overflow problem is only constrained by the number of bits
+used for arrays.
+
+We implemented the data structures in the paper, build a
+parallel task scheduler to run a set of parallelizable programs that may be
+memory-bound or compute-bound. We discovered that in terms of program speedup,
+task stealing and througput are:
+
+
+%Briefly (150--200 words) describe the problem you tackled, your approach, the
+%headline evaluation results, and the main conclusion. Readers (the graders)
+%should understand the essence of your project from the abstract alone.
 \end{abstract}
 
 % =============================================================================
@@ -70,24 +95,124 @@ should understand the essence of your project from the abstract alone.
 \label{sec:goals}
 % =============================================================================
 
-State the goals of the project. What concurrent algorithm or data structure
-did you implement? Why is it interesting? How does it connect to course
-topics (cite the relevant lecture(s) from the course)?
 
-End this section with a crisp statement of your \emph{research question}
-(borrowed from or adapted from the chosen project idea in
-\texttt{project\_ideas.md}, or formulated by you if you proposed your own
-topic).
+The goals of the project are as follows:
+
+\begin{enumerate}
+    \item To implement the Chase-Lev work-stealing deque in OCaml: [paper]
+     proposes a new data-structure: dynamic circular arrays that grow when
+     tasks exceed the current array size and shrink when the number of elements
+     in the array is less than the array size by a specific factor. We want to
+     port the basic methods presented in the paper -- pop, push and steal --
+     from Java to OCaml. For ensuring that deque stealing is
+     guaranteed to be done only by one domain, OCaml's Atomic module, especially
+     it's compare$\_$and$\_$set instruction will be crucial to our work.
+
+   \item To implement a user-level parallel task scheduler: This
+    scheduler will take a recursively computable problem and divide it into
+    a set of initial tasks to be distributed across the scheduler work loops.
+    Each work-loop in the parallel scheduler:
+    \begin{enumerate}
+        \item will be mapped to a deque (double-ended queue) to which these tasks
+            will be pushed into.
+        \item will spawn new subtasks that will be pushed into the local deque. When
+            the scheduler is ready, tasks will be popped from the same end
+            This end is the bottom end of the deque.
+        \item can have tasks stolen from it by another domain but only
+            from the end opposite to where tasks are being pushed and popped.
+            This end is called top. The challenge will be to ensure this occurs
+            correctly among possibly several domains trying to steal tasks from
+            this work deque and to measure stealing for different classes of
+            problems (memory-bound vs compute bound).
+     \end{enumerate}
+     The scheduler will support a fork command to break down the problem tasks
+     into smaller-sized ones; to gather the computed results it will support
+     a join command.
+
+     Scheduler domains/deques can steal from each other using different
+     strategies. The easiest strategy one can implement is randomly picking up
+     a domain other than itself. Another one, suggessted in the problem statement
+     given to us, is a round-robin system where each domain attempts to steal
+     from the next one in a specified order. We will implement both and measure
+     outputs for both strategies.
+
+   \item To develop accurate models for the deque used in the implementation
+       that can be used in checking correctness in the linearizability of the
+       implementation using QCheck-Lin and sequential specification using
+       QCheck-STM.
+
+   \item To check that there are no data races ina the codebase, we will check
+       all executions on an OCaml compiler instance augumented by TSAN
+       (ThreadSanitizer).
+
+    The following are the most interesting and possibly challenging parts of our
+    goals:
+    \begin{itemize}
+        \item correctly implementing the growing, shrinking of the underlying
+            circular arrays while ensuring correct deque behaviour - LIFO
+            pushing and popping of tasks in a deque contends in a linearizable
+            way with FIFO (stealing) of tasks from the deque by another domain.
+        \item building a parallel scheduler that operates correctly with
+            per-domain deques that spawn, join and steal tasks concurrently and
+            correctly. We have encountered both unicore (single-domain) and
+            parallel round-robin schedulers (effect-based) with a single shared
+            task queue as the work loop in CS6868 lectures 9 and 10 but without
+            any work-stealing. Ensuring the correctness of work stealing by a
+            single domain among several competing domains
+            in the parallel scheduler with dynamic arrays will be the key.
+    \end{itemize}
+
+   We want to tackle four problems either compute-bound (where execution speed
+   is primarily determined by the speed with which the tasks the problem is
+   divided into is executed by CPU) or memory-bound (where execution speed is
+   primarily determined by the rate with which data is read from/written to the
+   memory), which are:
+   \begin{enumerate}
+       \item parallel mergesort
+       \item fibonacci
+       \item <>
+       \item <>
+   \end{enumerate}
+
+   and measure:
+   \begin{enumerate}
+       \item program speedup
+       \item steal frequency
+       \item task throughput
+       \item the impact of steal policy on steal frequency (round-robin,
+           random victim)
+       \item the threshold or task size at which sequential execution
+             is faster than parallel execution
+   \end{enumerate}
+   for both the parallel scheduler and an implementation of a mutex-protected
+   shared-queue scheduler.
+
+
+\end{enumerate}
+
+%State the goals of the project. What concurrent algorithm or data structure
+%did you implement? Why is it interesting? How does it connect to course
+%topics (cite the relevant lecture(s) from the course)?
+%
+%End this section with a crisp statement of your \emph{research question}
+%(borrowed from or adapted from the chosen project idea in
+%\texttt{project\_ideas.md}, or formulated by you if you proposed your own
+%topic).
+%
 
 % =============================================================================
 \section{Background}
 \label{sec:background}
 % =============================================================================
 
-Summarise the algorithm or technique at a level that a classmate who has
-attended the lectures but not read the paper can follow. Cite the primary
-references~\cite{example}. If helpful, include a small figure or
-pseudo-code listing.
+deque is a double-ended queue to which items are pushed to as
+well as popped from one end and only stolen from the other end. Work-stealing
+is a technique for spreading out tasks among multiple processors
+
+%Summarise the algorithm or technique at a level that a classmate who has
+%attended the lectures but not read the paper can follow. Cite the primary
+%references~\cite{example}. If helpful, include a small figure or
+%pseudo-code listing.
 
 % Example listing:
 % \begin{lstlisting}[language=caml,caption={Sketch of the algorithm.},label={lst:algo}]
@@ -111,15 +236,47 @@ relevant files/commits in your GitHub repository.
 Describe how you tested correctness (QCheck-Lin, QCheck-STM, dscheck, TSAN,
 etc.) and what bugs the tests caught.
 
+
+% Implement the **Chase-Lev work-stealing deque** in OCaml 5 using `Atomic`
+%   operations. The deque must support `push` (owner only), `pop` (owner only),
+%   and `steal` (called by any other domain). Implement the **growable circular
+%   array** — the deque must dynamically resize when full rather than failing.
+%
+%
+%
+% Build a **parallel task scheduler** on top of the deque: spawn `n` OCaml 5
+%   domains, each running a work loop that executes local tasks and steals from
+%   random victims when idle. Support a `fork`/`join` API that recursively
+%   decomposes a problem (e.g., parallel mergesort, parallel map over an array,
+%   or Fibonacci as a stress test).
+% Verify the deque's correctness using **QCheck-Lin** and **QCheck-STM**:
+%   model the deque as a sequential double-ended queue and test that concurrent
+%   push/pop/steal sequences are linearizable (QCheck-Lin) and conform to the
+%   sequential specification (QCheck-STM).
+% Run **TSAN** to confirm the deque and scheduler are race-free.
+% Benchmark the scheduler on two parallel workloads (e.g., parallel mergesort
+%   and a recursive divide-and-conquer computation) across 1–8 domains. Measure
+%   **speedup**, **steal rate**, and **task throughput**. Compare against a naive
+%   shared-queue scheduler protected by a single mutex.
+
 % =============================================================================
 \section{Evaluation}
 \label{sec:evaluation}
 % =============================================================================
 
-Describe your experimental setup (hardware, number of domains/threads, how
-you measured, how many runs, how you handled warm-up and noise). Present
-results with plots or tables.
+% Investigate the impact of **steal policy** (random victim vs. round-robin)
+%   and **task granularity** (varying the threshold at which recursion stops and
+%   sequential execution takes over) on performance.
+%
 
+
+%How effectively does work stealing balance load across OCaml 5 domains for
+%irregular parallel workloads, and what is the relationship between task
+%granularity, steal frequency, and overall speedup?
+%Describe your experimental setup (hardware, number of domains/threads, how
+%you measured, how many runs, how you handled warm-up and noise). Present
+%results with plots or tables.
+%
 % Example figure:
 % \begin{figure}[h]
 %   \centering
