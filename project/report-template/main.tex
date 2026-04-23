@@ -71,6 +71,8 @@ overall program execution. At the same time, this introduces contention with
 possibly multiple domains trying to steal from a domain that may be about to
 pick up the same task for execution locally.
 
+\setlength{\parskip}{0.5em}
+
 [paper] originally introduced this idea of using array-based deques (double-ended
 queues) for managing tasks across multiprocessors. With fixed-size arrays,
 inefficient memory usage and array overflow were the fundamental problems. Our
@@ -78,6 +80,8 @@ implementation is based on [Chase-Lev] which addressed both problems using
 dynamic cyclic arrays:  arrays can grow or shrink as needed and using a cyclic
 array ensures the overflow problem is only constrained by the number of bits
 used for arrays.
+
+\setlength{\parskip}{0.5em}
 
 We implemented the data structures in the paper, build a
 parallel task scheduler to run a set of parallelizable programs that may be
@@ -205,9 +209,66 @@ The goals of the project are as follows:
 \label{sec:background}
 % =============================================================================
 
-deque is a double-ended queue to which items are pushed to as
-well as popped from one end and only stolen from the other end. Work-stealing
-is a technique for spreading out tasks among multiple processors
+
+Definition: A deque is a double-ended queue which can exhibit LIFO (stack)
+behaviour at one end and FIFO (stack) behaviour at another. Items can be pushed
+to and popped from one end (stack-like) whereas they can only be removed from
+the other end (queue-like).
+
+\setlength{\parskip}{1em}
+
+Any parallelizable problem needs to be broken down into smaller units or tasks.
+In a multiprocessor system with several processes (OCaml domains), these tasks
+can be spread across them for faster execution. Once initial task distribution
+is complete, processes can themselves create new subtasks to be stored in a data
+structure local to the process. As soon as the domain can process these
+subtasks, they are removed from the structure and executed.
+
+
+\setlength{\parskip}{1em}
+[Book] describes two paradigms on sharing tasks in a shared-memmory system with
+mutiple processors - work dealing and work stealing. Work-dealing involves
+work deques with more tasks than others giving away some tasks to other deques
+until the numbers of tasks are equalized between them. This requires both
+deques to stop what they are doing until task sharing is complete. The
+determination on when to share is made when the number of tasks exceed a
+predetermined limit and requires multiple queues to stop and co-ordinate.
+
+
+\setlength{\parskip}{1em}
+Work-stealing flips the onus on empty work deques to take tasks away from busier
+deques. With multiple possible empty deques, stealing puts more contention
+on busier deques but the clever trick of only stealing from one end of the deque
+(FIFO) ensures that any synchronization need only be handled at that end
+(called the top). Multiple
+domains or processes may attempt to steal from one domain while the local domain
+continues to push and pop tasks from the deque. Contention occurs when there is
+only one element in the deque that can be either stolen (by multiple domains)
+or popped next by the local domain.
+
+
+\setlength{\parskip}{1em}
+[ABP paper] implements a user-level task scheduler based on array-based deques
+with work-stealing among processes as described above. The three main methods
+for the ABP deque is:
+
+\begin{itemize}[noitemsep, nosep]
+    \item pushBottom o: which pushes o to the bottom end of the deque
+    \item popBottom: pops an object from the bottom of the deque; if the
+        deque is empty, an Empty value is returned.
+    \item steal: if a stealing process attempts to deque a value from the local
+        deque, one of the three values can be returned:
+       \begin{itemize}[noitemsep]
+           \item if a task is successfully stolen from the top end of the deque,
+                 then that task is returned returned
+           \item if the local deque is empty, then an Empty value is returned
+           \item if the stealing process loses out to another stealing process,
+                 then an Abort value is returned.
+      \end{itemize}
+\end{itemize}
+
+\includegraphics{deque_methods}
+
 
 %Summarise the algorithm or technique at a level that a classmate who has
 %attended the lectures but not read the paper can follow. Cite the primary
@@ -267,12 +328,10 @@ etc.) and what bugs the tests caught.
 % Investigate the impact of **steal policy** (random victim vs. round-robin)
 %   and **task granularity** (varying the threshold at which recursion stops and
 %   sequential execution takes over) on performance.
-%
-
-
 %How effectively does work stealing balance load across OCaml 5 domains for
 %irregular parallel workloads, and what is the relationship between task
 %granularity, steal frequency, and overall speedup?
+
 %Describe your experimental setup (hardware, number of domains/threads, how
 %you measured, how many runs, how you handled warm-up and noise). Present
 %results with plots or tables.
