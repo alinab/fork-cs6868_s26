@@ -171,23 +171,13 @@ The goals of the project are as follows:
    divided into is executed by CPU) or memory-bound (where execution speed is
    primarily determined by the rate with which data is read from/written to the
    memory), which are:
-   \begin{enumerate}
-       \item parallel mergesort
-       \item fibonacci
-       \item <>
-       \item <>
-   \end{enumerate}
-
-   and measure:
-   \begin{enumerate}
-       \item program speedup
-       \item steal frequency
-       \item task throughput
-       \item the impact of steal policy on steal frequency (round-robin,
-           random victim)
-       \item the threshold or task size at which sequential execution
-             is faster than parallel execution
-   \end{enumerate}
+   1) parallel mergesort 2) fibonacci 3) parallel map over an array
+   4) <>
+   and measure: 1) program speedup 2) steal frequency 3) task throughput
+   4) the impact of steal policy on steal frequency (round-robin,
+   random victim) 5) the threshold or task size at which sequential execution
+   is faster than parallel execution
+   \newline
    for both the parallel scheduler and an implementation of a mutex-protected
    shared-queue scheduler.
 
@@ -220,8 +210,8 @@ the other end (queue-like).
 Any parallelizable problem needs to be broken down into smaller units or tasks.
 In a multiprocessor system with several processes (OCaml domains), these tasks
 can be spread across them for faster execution. Once initial task distribution
-is complete, processes can themselves create new subtasks to be stored in a data
-structure local to the process. As soon as the domain can process these
+is complete, processes can themselves create new subtasks to be stored in a
+data structure local to the process. As soon as the domain can process these
 subtasks, they are removed from the structure and executed.
 
 
@@ -250,8 +240,10 @@ or popped next by the local domain.
 \setlength{\parskip}{1em}
 [ABP paper] implements a user-level task scheduler based on array-based deques
 with work-stealing among processes as described above. The three main methods
-for the ABP deque is:
+for the ABP deque are:
 
+
+\includegraphics{deque_methods}
 \begin{itemize}[noitemsep, nosep]
     \item pushBottom o: which pushes o to the bottom end of the deque
     \item popBottom: pops an object from the bottom of the deque; if the
@@ -267,11 +259,11 @@ for the ABP deque is:
       \end{itemize}
 \end{itemize}
 
-\includegraphics{deque_methods}
 
 The salient feature of the ABP algorithm is that the arrays backing the deques
-are of fixed size. Changing these to arrays to be cyclic - where the top and the
-bottom indices are reset to point to the beginning of the array when the deque
+are of fixed size. Changing these to arrays to be cyclic - where the top and
+the bottom indices are reset to point to the beginning of the array when the
+deque
 becomes empty - makes overflow less frequent but does not rule out its
 occurence. A subsequest [Hendler, Lev and Shavit] used a list of arrays to
 address this problem but these arrays were not cyclic and using the list of
@@ -306,11 +298,6 @@ indices where:
 
 The deque is empty when the $bottom$ is less than or equal to $top$.
 
-(* For one
-index to be less than the other is possible when concurrent processes with
-separate deques are trying to steal from each other as well as popping tasks of
-their own deques. *)
-
 The deque size increases when items are pushed into it. If the current array is
 full, a new array with a specified larger size is created. The elements from the
 current array are copied over into this new, bigger array. Lastly, the new item
@@ -337,11 +324,6 @@ separate tag field is needed unlike all earlier work-stealing algorithms.
 %references~\cite{example}. If helpful, include a small figure or
 %pseudo-code listing.
 
-% Example listing:
-% \begin{lstlisting}[language=caml,caption={Sketch of the algorithm.},label={lst:algo}]
-% let foo x = ...
-% \end{lstlisting}
-
 % =============================================================================
 \section{Tasks Undertaken}
 \label{sec:tasks}
@@ -354,36 +336,207 @@ separate tag field is needed unlike all earlier work-stealing algorithms.
 %Describe the implementation: key data structures, atomic operations used,
 %subtle invariants, and any design choices you had to make. Link to the
 %relevant files/commits in your GitHub repository.
-\subsubsection{Circular Array and Deque implementation}
+
+\subsubsection{Deque and Circular Array implementation}
+
+The implementation began with translating the code presented in [Chase-Lev]
+paper from Java to OCaml
+(\href{https://github.com/alinab/fork-cs6868_s26/commit/b7bdeac9167f5fbeaee63e81deceaf0c43733d98}{b7bdeac}).
+\begin{lstlisting}[language=caml,
+caption={deque types, CAS on top index},label={lst:deque-types}]
+type 'a result =
+    | Empty
+    | Abort
+    | Value of 'a
+
+type 'a t = {
+    bottom : int Atomic.t;
+    top    : int Atomic.t;
+    active_array : 'a Circular_array.t Atomic.t;
+}
+
+let cas_top deque_arr old_top new_top =
+    Atomic.compare_and_set deque_arr.top old_top new_top
+\end{lstlisting}
+
+The deque stores all items in the active array data structure which is defined
+as an atomic reference as are the top and bottom indices. This is to ensure the
+absence of data races between local and stealing processes acting on the deque.
+
+The Atomic.compare\_and\_swap is used to ensure that only one among
+possibly multiple competing stealing processes can take an item off the top
+end of the deque. The process which succeeds returns with the item wrapped in a
+Value, others return an Abort indicating an aborted attempt to steal.
 
 
+In the $steal$ method, the top index can only be less than the bottom index
+when another process steals from the local deque i.e. top = top + 1 and
+bottom = bottom - 1 concurrently.
+
+\begin{lstlisting}[language=caml,
+caption={grow, shrink circular array},label={lst:circular-array-grow-shrink}]
+type 'a t = {
+    log_size : int;
+    segment: 'a option Atomic.t array;
+}
+
+let create log_size = {
+    log_size = log_size;
+    segment = Array.init (1 lsl log_size) (fun _ -> Atomic.make None)
+}
+
+let size _array = 1 lsl (_array.log_size)
+
+let grow _array ~bottom ~top =
+    let new_array = create (_array.log_size + 1) in
+    for i = top to bottom - 1 do
+        put_item new_array i (get_item _array i)
+    done;
+    new_array
+
+let shrink _array ~bottom ~top =
+    let shrunk_array = create (_array.log_size - 1) in
+    for i = top to bottom - 1 do
+        put_item shrunk_array i (get_item _array i)
+    done;
+    shrunk_array
+\end{lstlisting}
+
+Based on the code outlined in the [ABP] paper, the circular array only stores
+the log of the size, not the size itself. This makes the growing (\href{https://github.com/alinab/fork-cs6868_s26/commit/8324758fc3e51c064bcb5e6a216e97d5cc356c15}{8324758})
+and shrinking
+(\href{https://github.com/alinab/fork-cs6868_s26/commit/a9f0687fc8eb0b61dc2f059683f209be6a223649}{a9f0687})
+of the circular array elegant and only requires copying items from the older to
+the expanded or the shrunk array.
+
+The $Deque.perhaps\_shrink$ method shrinks the
+array if the number of elements in the deque is less than 1/K of the array size,
+where K >= 3. This ensures that when the array is shrunk and halved in size, the
+number of elements are less than 1/3rd of the array. This ensures that there's
+enough free space for newer items to be pushed to the deque and no need to
+expand the array soon after shrinking.
+
+The [Chase-Lev] algorithm requires the memory allocated to unused arrays to be
+reclaimed via a garbage collector for which nothing extra need be done in
+OCaml. For work-stealing algorithms, where each process has its own deque and
+the upper bound for the maximum amount of memory needed by all
+deques can be determined upfront, it is often more suitable to use the shared
+pool model. However in the interests of finishing the project in time, we did
+not finish the attempt to implement this.
+
+
+\subsubsection{Scheduler implementation}
+\begin{lstlisting}[language=caml,
+caption={scheduler design},label={lst:scheduler}]
+(* scheduler.ml *)
+type task = Task of (ctx -> unit)
+
+and ctx = {
+    pool      : deque_pool;
+    worker_id : int;
+    rng       : Random.State.t
+
+}
+
+and deque_pool = {
+    deques  : task Deque.t array;
+    pending : int Atomic.t;
+    size    : int;          (* number of domains *)
+    next_worker : int Atomic.t;
+    steal_count : int Atomic.t
+}
+
+(* future.ml *)
+type 'a t = 'a option Atomic.t
+
+(* A future is initialized to None *)
+let create () = Atomic.make None
+
+let get ft = Atomic.get ft
+
+let fill ft v = if not (Atomic.compare_and_set ft None (Some v)) then
+                    failwith "Future.fill: future is already filled\n"
+
+let is_done ft = Atomic.get ft <> None
+\end{lstlisting}
+
+(\href{https://github.com/alinab/fork-cs6868_s26/blame/work-steal/work-steal/lib/scheduler.ml}{0b98700})
+
+The scheduler whose constituent types are shown above is a parallel work-stealing
+one where each worker domain owns a local double-ended deque of tasks. Workers
+push and pop tasks from the bottom of their own deque in a lock-free manner,
+while idle workers choose a random domain's deque to steal tasks from using a
+compare-and-swap (CAS).
+
+Tasks receive a context ($ctx$) containing the pool of all deques. The pool
+keeps a running count of pending tasks, an array of deques containing tasks,
+the count of how many successful steals have occurred. When fork --
+which pushes a child task onto the local deque and returns a future -- a
+placeholder which will eventually be filled with the result of the child task --
+the number of pending tasks is incremented. join spin-blocks on the spawned task
+that is yet to be executed and return a result but keeps the domain productive
+by continuing to execute and steal tasks until the awaited future is filled.
+This design ensures that synchronization cost is proportional to stealing
+frequency rather than task frequency, since the local push and pop requires no
+cross-domain coordination.
 
 \subsection{Testing and verification}
-Describe how you tested correctness (QCheck-Lin, QCheck-STM, dscheck, TSAN,
-etc.) and what bugs the tests caught.
+%Describe how you tested correctness (QCheck-Lin, QCheck-STM, dscheck, TSAN,
+% etc.) and what bugs the tests caught.
 
 
-% Implement the **Chase-Lev work-stealing deque** in OCaml 5 using `Atomic`
-%   operations. The deque must support `push` (owner only), `pop` (owner only),
-%   and `steal` (called by any other domain). Implement the **growable circular
-%   array** — the deque must dynamically resize when full rather than failing.
-%
-%
-%
-% Build a **parallel task scheduler** on top of the deque: spawn `n` OCaml 5
-%   domains, each running a work loop that executes local tasks and steals from
-%   random victims when idle. Support a `fork`/`join` API that recursively
-%   decomposes a problem (e.g., parallel mergesort, parallel map over an array,
-%   or Fibonacci as a stress test).
-% Verify the deque's correctness using **QCheck-Lin** and **QCheck-STM**:
-%   model the deque as a sequential double-ended queue and test that concurrent
-%   push/pop/steal sequences are linearizable (QCheck-Lin) and conform to the
-%   sequential specification (QCheck-STM).
-% Run **TSAN** to confirm the deque and scheduler are race-free.
-% Benchmark the scheduler on two parallel workloads (e.g., parallel mergesort
-%   and a recursive divide-and-conquer computation) across 1–8 domains. Measure
-%   **speedup**, **steal rate**, and **task throughput**. Compare against a naive
-%   shared-queue scheduler protected by a single mutex.
+\subsubsection{QCheck-Lin testing}
+The QCheck-Lin test
+(\href{https://github.com/alinab/fork-cs6868_s26/commit/ed5fa5016dd5365a03977a953d01a9088fa58885}{ed5fa50})
+involved developing a model using the $Lin\_domain.Make\_internal$ functor
+with the following types:
+
+\begin{lstlisting}[language=caml,
+caption={qcheck lin types},label={lst:qcheck-lin-test}]
+type cmd =
+  | Push  of int
+  | Pop
+  | Steal
+
+type res =
+  | RPush
+  | RPop   of int Deque.result
+  | RSteal of int Deque.result
+\end{lstlisting}
+
+The initial model was incorrect as all deque operations were spread across
+two parallel domains, violating the deque's owner/thief constraint where only
+one domain can call $push\_bottom$ and $pop\_bottom$ while $steal$ is called by
+the other domain in parallel. Also, returning a Deque.Abort value has no
+sequential equivalent causing spurious linearizability failures i.e. only if an
+actual Value is returned can be pop\_bottom or an steal operation be successful.
+Otherwise an empty deque or a failed steal attempt never actually return a
+value and must be treated as semantically equal results when concurrent
+operations on parallel domains are executed.
+
+Enforcing the owner/thief split among two test domains required dropping down to
+the internal $Lin\_domain.Make\_internal$ functor and constructing a custom
+triple generator using $QCheck.Gen.triple$ that routes owner commands
+(Push/Pop) exclusively to the sequential prefix and left domain, and thief
+commands (Steal) exclusively to the right domain.
+
+A further subtlety was that the cmd and res types had to be defined at the top
+level rather than inside the spec module to avoid OCaml's GADT type escaping
+errors. The final test uses $M.lin\_prop$ for linearizability checking and
+$M.stress\_prop$ for exception safety, both driven by the same
+$arb\_owner\_thief$ generator that enforces the ownership invariant.
+
+Running the test on a TSAN-enhanced opam switch did help trace and pinpoint
+an error (fixed in
+\href{https://github.com/alinab/fork-cs6868_s26/commit/680e1ae372df43e5ff2115d4176b6824b3091111}{680e1ae}).
+TSAN was throwing up a data race on the $push\_bottom$ operation. The problem
+was that $push\_bottom$ was reading the $active\_array$ i.e. the array backing
+the deque and potentially growing it. However a concurrent steal operation may have reading
+the $active\_array$ between the $grow$ operation and the $put\_item$ operation.
+Ensuring that the swap between the older and the grown array is atomic fixed
+this issue.
+
+\subsubsection{QCheck-STM testing}
 
 % =============================================================================
 \section{Evaluation}
@@ -391,8 +544,7 @@ etc.) and what bugs the tests caught.
 % =============================================================================
 
 % Investigate the impact of **steal policy** (random victim vs. round-robin)
-%   and **task granularity** (varying the threshold at which recursion stops and
-%   sequential execution takes over) on performance.
+%   and **task granularity** (varying the threshold at which recursion stops and %   sequential execution takes over) on performance.
 %How effectively does work stealing balance load across OCaml 5 domains for
 %irregular parallel workloads, and what is the relationship between task
 %granularity, steal frequency, and overall speedup?
@@ -459,9 +611,25 @@ use it the same way again?
 \label{sec:conclusions}
 % =============================================================================
 
-Answer the research question stated in \cref{sec:goals}. Summarise the main
-findings. State the limitations of your work honestly. Suggest what you
-would do next given more time.
+%Answer the research question stated in \cref{sec:goals}. Summarise the main
+%findings. State the limitations of your work honestly. Suggest what you
+%would do next given more time.
+
+%With the shared pool model, the extra available buffers
+%for all the deques are kept in a shared pool. Whenever the
+%deque’s owner needs a bigger array, it allocates one (of the
+%appropriate size) from the pool, and whenever it shrinks to
+%a smaller array and does not need the bigger array anymore,
+%it can return it to the pool. There are two main advantages
+%for the shared pool model: First, it is much less expensive
+%to reclaim and allocate buffers from the shared pool than
+%to allocate them from the heap and use the garbage collector for reclamation. Second, as described in this section, by
+%assuming that the reclaimed buffers are not returned to a
+%global use by the operating system, the deque’s owner can
+%reclaim a buffer while there may be still some thieves referencing it (something that the garage collector will not do),
+%which leads to a better use of the allocated space
+%
+
 
 % =============================================================================
 \section*{Contributions}
