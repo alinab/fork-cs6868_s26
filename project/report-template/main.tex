@@ -269,6 +269,68 @@ for the ABP deque is:
 
 \includegraphics{deque_methods}
 
+The salient feature of the ABP algorithm is that the arrays backing the deques
+are of fixed size. Changing these to arrays to be cyclic - where the top and the
+bottom indices are reset to point to the beginning of the array when the deque
+becomes empty - makes overflow less frequent but does not rule out its
+occurence. A subsequest [Hendler, Lev and Shavit] used a list of arrays to
+address this problem but these arrays were not cyclic and using the list of
+arrays presented a more complicated algorithm to reason about in terms of time
+and space complexity.
+
+The Chase-Lev algorithm takes care of the overflow problem by using dynamic,
+cyclic arrays. The only restriction on the size of deques is integer overflow
+in the address space.  In our OCaml implementation, with a runtime representation
+of 63 bits, the max size of the address space with 63-bit integers is
+9.223372e+18. Given the
+operation rate quoted in the paper, 4 billion ops/sec, the time until which
+deque overflow will occur is:
+\newline $ 9.223372e+18 / (4e+9) ~ 2.30 * 109$ seconds
+\newline Converting this to years comes to:
+\newline $ 365.25 * 24 * 3600 ~ 3.156 * 10e+7$ sec/yr
+\newline $ 4.61 * 109 / 3.156 * 107 ~ 73 $ years
+\newline So in practical terms, on modern systems,  overflow is not a problem with this
+algorithm.
+
+Deques are implemented using cyclic array whose ends are indicated by two
+indices where:
+\begin{itemize}[noitemsep, nosep]
+    \item top: is the first element at the top end of the deque. This end has
+    first-in-first-out (FIFO) behaviour and is incremented on every steal
+    operation.
+\item bottom: is the \emph{next available} slot in the array where a new element
+    will be pushed. This index is incremented on every $pushBottom$ operation.
+    This end of the deque had last-in-first-out (LIFO) behaviour and so operates
+    like a stack than a queue.
+\end{itemize}
+
+The deque is empty when the $bottom$ is less than or equal to $top$.
+
+(* For one
+index to be less than the other is possible when concurrent processes with
+separate deques are trying to steal from each other as well as popping tasks of
+their own deques. *)
+
+The deque size increases when items are pushed into it. If the current array is
+full, a new array with a specified larger size is created. The elements from the
+current array are copied over into this new, bigger array. Lastly, the new item
+is pushed into this expanded array. The inverse occurs when items are popped
+from the deque. If the number of elements in the deque is determined to be less
+than a heuristic based on the deque size relative to a predetermined constant,
+then the circular array is shrunk to a lesser size. Again, array elements are
+copied over to this new, smaller array with the popped element no longer in it.
+
+Arrays backing deques are circular i.e. items are stored indexed modulo to the
+array size. On growing the array, moving items into the newer, larger-sized
+array, there is no need to update top or bottom although one must always keep in
+mind that the actual array indices in this array may be different.
+
+The top and bottom indices operate on oppsosite ends of the deque and only
+contend when the last element can be either popped by the local process or stolen
+by another process. For this, top is only ever modified by the $steal$ operation
+and its value is never decremented indicating a linearized timeline of items
+stolen from one end of the deque. With the $top$ index never decremented, no
+separate tag field is needed unlike all earlier work-stealing algorithms.
 
 %Summarise the algorithm or technique at a level that a classmate who has
 %attended the lectures but not read the paper can follow. Cite the primary
@@ -285,13 +347,16 @@ for the ABP deque is:
 \label{sec:tasks}
 % =============================================================================
 
-Describe what you actually built. Organise this section as sub-sections per
-major task; use the \emph{Tasks} list from the project idea as a checklist.
+%Describe what you actually built. Organise this section as sub-sections per
+%major task; use the \emph{Tasks} list from the project idea as a checklist.
 
 \subsection{Implementation}
-Describe the implementation: key data structures, atomic operations used,
-subtle invariants, and any design choices you had to make. Link to the
-relevant files/commits in your GitHub repository.
+%Describe the implementation: key data structures, atomic operations used,
+%subtle invariants, and any design choices you had to make. Link to the
+%relevant files/commits in your GitHub repository.
+\subsubsection{Circular Array and Deque implementation}
+
+
 
 \subsection{Testing and verification}
 Describe how you tested correctness (QCheck-Lin, QCheck-STM, dscheck, TSAN,
