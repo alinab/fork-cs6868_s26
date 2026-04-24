@@ -73,10 +73,10 @@ pick up the same task for execution locally.
 
 \setlength{\parskip}{0.5em}
 
-[paper] originally introduced this idea of using array-based deques (double-ended
+\cite{arora1998thread} originally introduced this idea of using array-based deques (double-ended
 queues) for managing tasks across multiprocessors. With fixed-size arrays,
 inefficient memory usage and array overflow were the fundamental problems. Our
-implementation is based on [Chase-Lev] which addressed both problems using
+implementation is based on \cite{chase2005dynamic} which addressed both problems using
 dynamic cyclic arrays:  arrays can grow or shrink as needed and using a cyclic
 array ensures the overflow problem is only constrained by the number of bits
 used for arrays.
@@ -103,7 +103,7 @@ task stealing and througput are:
 The goals of the project are as follows:
 
 \begin{enumerate}
-    \item To implement the Chase-Lev work-stealing deque in OCaml: [paper]
+    \item To implement the Chase-Lev work-stealing deque in OCaml: \cite{chase2005dynamic}
      proposes a new data-structure: dynamic circular arrays that grow when
      tasks exceed the current array size and shrink when the number of elements
      in the array is less than the array size by a specific factor. We want to
@@ -166,21 +166,29 @@ The goals of the project are as follows:
             in the parallel scheduler with dynamic arrays will be the key.
     \end{itemize}
 
-   We want to tackle four problems either compute-bound (where execution speed
-   is primarily determined by the speed with which the tasks the problem is
-   divided into is executed by CPU) or memory-bound (where execution speed is
-   primarily determined by the rate with which data is read from/written to the
-   memory), which are:
-   1) parallel mergesort 2) fibonacci 3) parallel map over an array
-   4) <>
-   and measure: 1) program speedup 2) steal frequency 3) task throughput
-   4) the impact of steal policy on steal frequency (round-robin,
-   random victim) 5) the threshold or task size at which sequential execution
-   is faster than parallel execution
-   \newline
-   for both the parallel scheduler and an implementation of a mutex-protected
-   shared-queue scheduler.
+    We evaluate four benchmark problems, categorised by their primary bottleneck:
 
+    \begin{description}
+      \item[Compute-bound] problems, where execution speed is primarily
+      determined by the rate at which the CPU executes tasks:
+      (1)~Parallel Fibonacci,
+      (2)~\textit{(to be added)}.
+
+      \item[Memory-bound] problems, where execution speed is primarily
+      determined by the rate at which data is read from and written to memory:
+      (1)~Parallel merge sort,
+      (2)~Parallel map over an array.
+     \end{description}
+
+     For each benchmark we measure the following metrics across both the
+     work-stealing scheduler and a mutex-protected shared-queue scheduler:
+     (1)~parallel speedup relative to a sequential baseline,
+     (2)~steal frequency,
+     (3)~task throughput,
+     (4)~the impact of steal policy on steal frequency comparing round-robin
+     and random victim selection, and
+     (5)~the crossover threshold below which sequential execution outperforms
+     parallel execution.
 
 \end{enumerate}
 
@@ -216,7 +224,7 @@ subtasks, they are removed from the structure and executed.
 
 
 \setlength{\parskip}{1em}
-[Book] describes two paradigms on sharing tasks in a shared-memmory system with
+\cite{AoMPP} describes two paradigms on sharing tasks in a shared-memmory system with
 mutiple processors - work dealing and work stealing. Work-dealing involves
 work deques with more tasks than others giving away some tasks to other deques
 until the numbers of tasks are equalized between them. This requires both
@@ -238,12 +246,13 @@ or popped next by the local domain.
 
 
 \setlength{\parskip}{1em}
-[ABP paper] implements a user-level task scheduler based on array-based deques
-with work-stealing among processes as described above. The three main methods
-for the ABP deque are:
+The \cite{arora1998thread} implements a user-level task scheduler based on
+array-based deques with work-stealing among processes as described above. The
+three main methods for the ABP deque are:
 
 
-\includegraphics{deque_methods}
+\includegraphics{deque_ops}
+
 \begin{itemize}[noitemsep, nosep]
     \item pushBottom o: which pushes o to the bottom end of the deque
     \item popBottom: pops an object from the bottom of the deque; if the
@@ -270,19 +279,26 @@ address this problem but these arrays were not cyclic and using the list of
 arrays presented a more complicated algorithm to reason about in terms of time
 and space complexity.
 
-The Chase-Lev algorithm takes care of the overflow problem by using dynamic,
-cyclic arrays. The only restriction on the size of deques is integer overflow
-in the address space.  In our OCaml implementation, with a runtime representation
-of 63 bits, the max size of the address space with 63-bit integers is
-9.223372e+18. Given the
-operation rate quoted in the paper, 4 billion ops/sec, the time until which
-deque overflow will occur is:
-\newline $ 9.223372e+18 / (4e+9) ~ 2.30 * 109$ seconds
-\newline Converting this to years comes to:
-\newline $ 365.25 * 24 * 3600 ~ 3.156 * 10e+7$ sec/yr
-\newline $ 4.61 * 109 / 3.156 * 107 ~ 73 $ years
-\newline So in practical terms, on modern systems,  overflow is not a problem with this
-algorithm.
+The Chase-Lev algorithm addresses the overflow problem by using dynamic cyclic arrays.
+The only practical restriction on deque size is integer overflow in the address space.
+In our OCaml implementation, integers have a runtime representation of 63 bits,
+giving a maximum value of $2^{63} - 1 \approx 9.22 \times 10^{18}$.
+
+Given the operation rate quoted in the paper of $4 \times 10^{9}$ operations per second,
+the time until deque index overflow occurs is:
+
+\[
+\frac{2^{63} - 1}{4 \times 10^{9}} \approx 2.30 \times 10^{9} \text{ seconds}
+\]
+
+Converting to years, using $365.25 \times 24 \times 3600 \approx 3.156 \times 10^{7}$
+seconds per year:
+
+\[
+\frac{2.30 \times 10^{9}}{3.156 \times 10^{7}} \approx 73 \text{ years}
+\]
+
+In practical terms, integer overflow is not a concern for this algorithm on modern systems.
 
 Deques are implemented using cyclic array whose ends are indicated by two
 indices where:
@@ -339,7 +355,7 @@ separate tag field is needed unlike all earlier work-stealing algorithms.
 
 \subsubsection{Deque and Circular Array implementation}
 
-The implementation began with translating the code presented in [Chase-Lev]
+The implementation began with translating the code presented in \cite{chase2005dynamic}
 paper from Java to OCaml
 (\href{https://github.com/alinab/fork-cs6868_s26/commit/b7bdeac9167f5fbeaee63e81deceaf0c43733d98}{b7bdeac}).
 \begin{lstlisting}[language=caml,
@@ -402,8 +418,9 @@ let shrink _array ~bottom ~top =
     shrunk_array
 \end{lstlisting}
 
-Based on the code outlined in the [ABP] paper, the circular array only stores
-the log of the size, not the size itself. This makes the growing (\href{https://github.com/alinab/fork-cs6868_s26/commit/8324758fc3e51c064bcb5e6a216e97d5cc356c15}{8324758})
+Based on the code outlined in the \cite{arora1998thread} paper, the circular array only stores
+the log of the size, not the size itself. This makes the growing
+(\href{https://github.com/alinab/fork-cs6868_s26/commit/8324758fc3e51c064bcb5e6a216e97d5cc356c15}{8324758})
 and shrinking
 (\href{https://github.com/alinab/fork-cs6868_s26/commit/a9f0687fc8eb0b61dc2f059683f209be6a223649}{a9f0687})
 of the circular array elegant and only requires copying items from the older to
@@ -416,7 +433,7 @@ number of elements are less than 1/3rd of the array. This ensures that there's
 enough free space for newer items to be pushed to the deque and no need to
 expand the array soon after shrinking.
 
-The [Chase-Lev] algorithm requires the memory allocated to unused arrays to be
+The \cite{chase2005dynamic} algorithm requires the memory allocated to unused arrays to be
 reclaimed via a garbage collector for which nothing extra need be done in
 OCaml. For work-stealing algorithms, where each process has its own deque and
 the upper bound for the maximum amount of memory needed by all
@@ -486,9 +503,8 @@ cross-domain coordination.
 
 
 \subsubsection{QCheck-Lin testing}
-The QCheck-Lin test
-(\href{https://github.com/alinab/fork-cs6868_s26/commit/ed5fa5016dd5365a03977a953d01a9088fa58885}{ed5fa50})
-involved developing a model using the $Lin\_domain.Make\_internal$ functor
+
+The QCheck-Lin test involved developing a model using the $Lin\_domain.Make\_internal$ functor
 with the following types:
 
 \begin{lstlisting}[language=caml,
@@ -570,7 +586,8 @@ The QCheck-STM test required a more careful design than the Lin test because
 STM checks exact values against a sequential model rather than just
 linearizability. The sequential model represents the deque as a plain int list
 where the front is the steal end and the back is the push/pop end, with
-$next\_state$ advancing the model by appending to the back for the $push\_bottom$
+$next\_state$ advancing the model by appending to the back for the
+$push\_bottom$
 operation, removing from the back for the $pop\_bottom$ operation, and
 removing from the front for the $steal$ operation.
 
@@ -580,25 +597,26 @@ matching inside the $postcond$ caused OCaml's type checker to report ambiguous
 type escaping errors. The fix was to compute expected values as plain int option
 values outside the GADT match before comparing.
 
-The second major hurdle was the same owner/thief constraint from the Lin test —
-$STM\_domain.Make$ distributes all operations across both parallel domains,
-causing $push\_bottom$ and $pop\_bottom$ to race concurrently and crash with
-index out of bounds. The fix was to use the $arb\_triple$ with separate
-generators for each domain similar to the qcheck-lin test. A third subtlety was
-that Abort needed to map to None in the result representation since STM's
-sequential model has no concept of a lost race, and the postcond function
-needed to accept None as valid whenever the model predicted either an empty
-deque or a racing steal. The final test combines $STM_sequential.Make$ for
-single-domain value correctness, $STM_domain.Make$ with $arb\_triple$ for
-parallel linearizability, and $stress\_prop\_par$ for crash safety.
-
+%The second major hurdle was the same owner/thief constraint from the Lin test -
+%$STM\_domain.Make$ distributes all operations across both parallel domains,
+%causing $push\_bottom$ and $pop\_bottom$ to race concurrently and crash with
+%index out of bounds. The fix was to use the $arb\_triple$ with separate
+%generators for each domain similar to the qcheck-lin test. A third subtlety was
+%that Abort needed to map to None in the result representation since STM's
+%sequential model has no concept of a lost race, and the postcond function
+%needed to accept None as valid whenever the model predicted either an empty
+%deque or a racing steal. The final test combines $STM_sequential.Make$ for
+%single-domain value correctness, $STM_domain.Make$ with $arb\_triple$ for
+%parallel linearizability, and $stress\_prop\_par$ for crash safety.
+%
 % =============================================================================
 \section{Evaluation}
 \label{sec:evaluation}
 % =============================================================================
 
 % Investigate the impact of **steal policy** (random victim vs. round-robin)
-%   and **task granularity** (varying the threshold at which recursion stops and %   sequential execution takes over) on performance.
+%   and **task granularity** (varying the threshold at which recursion stops and
+%   sequential execution takes over) on performance.
 %How effectively does work stealing balance load across OCaml 5 domains for
 %irregular parallel workloads, and what is the relationship between task
 %granularity, steal frequency, and overall speedup?
