@@ -58,27 +58,42 @@ let create_pool n policy = {
 
 let run_task (Task tsk) ctx = tsk ctx
 
-(* Updated: stealing across domains now occurs according to the policy set *)
-let try_steal ctx =
-  let victim = match ctx.steal_policy with
-    | Random ->
-        let v = ref (Random.State.int ctx.rng ctx.pool.size) in
-        (* ensure tasks are stolen from other domains *)
-        while !v = ctx.worker_id do
-          v := Random.State.int ctx.rng ctx.pool.size
-        done;
-        !v
-    | RoundRobin ->
-        (ctx.worker_id + 1) mod ctx.pool.size
-  in
+let try_steal_from ctx victim =
  (* once another victim domain is determined *)
   match Deque.steal ctx.pool.deques.(victim) with
   | Deque.Value task ->
       Atomic.fetch_and_add ctx.pool.steal_count 1 |> ignore;
       run_task task ctx;
-      Atomic.decr ctx.pool.pending; (* one less pending task *)
-      Atomic.incr ctx.pool.task_count (* one more task completed *)
+      Atomic.decr ctx.pool.pending;
+      Atomic.incr ctx.pool.task_count
   | Deque.Empty | Deque.Abort -> ()
+
+
+(* Updated: stealing across domains now occurs according to the policy set *)
+let try_steal ctx =
+  match ctx.steal_policy with
+  | Random ->
+      let victim = ref (Random.State.int ctx.rng ctx.pool.size) in
+      while !victim = ctx.worker_id do
+        (* ensure tasks are stolen from other domains *)
+        victim := Random.State.int ctx.rng ctx.pool.size
+      done;
+      try_steal_from ctx !victim
+  | RoundRobin ->
+      let stolen = ref false in
+      let i = ref 1 in
+      while not !stolen && !i < ctx.pool.size do
+        let victim = (ctx.worker_id + !i) mod ctx.pool.size in
+        (match Deque.steal ctx.pool.deques.(victim) with
+        | Deque.Value task ->
+            Atomic.fetch_and_add ctx.pool.steal_count 1 |> ignore;
+            run_task task ctx;
+            Atomic.decr ctx.pool.pending;
+            Atomic.incr ctx.pool.task_count;
+            stolen := true
+        | Deque.Empty | Deque.Abort -> ());
+        incr i
+      done
 
 (* If join were to keep waiting for a result, then work across domains
    would be blocked. The work_until loop ensures that while the current
@@ -93,12 +108,11 @@ let work_until ctx cond =
                 Atomic.decr ctx.pool.pending; (* one less pending task *)
                 Atomic.incr ctx.pool.task_count (* one more task completed *)
         | Deque.Empty
-        | Deque.Abort -> try_steal ctx (* steal tasks from other deques when
-                                        a domain's own deque is empty or
-                                        a previous steal by the current
-                                        domain failed *)
+        | Deque.Abort ->
+                try_steal ctx;
+                (* steal tasks from other deques when a domain's own deque is empty or
+                a previous steal by the current domain failed *)
     done
-
 
 let fork ctx f =
     (* create a future to hold the value *)
