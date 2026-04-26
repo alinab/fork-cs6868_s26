@@ -1,9 +1,14 @@
+(* Reify policy for stealing as a type *)
+type steal_policy =
+  | Random
+  | RoundRobin
+
 (* A task is just executing a function for now (unit-> unit *)
 (* A later refinement does two things to redefine a task:
     - a task takes a context (ctx) and returns a unit (* explained below *)
     - wraps the task in a Task type
     *)
-type task = Task of (ctx -> unit)
+and task = Task of (ctx -> unit)
 
 (* The abstract type ctx is now defined as a type with
    - the current domain/worker id
@@ -12,8 +17,8 @@ type task = Task of (ctx -> unit)
 and ctx = {
     pool      : deque_pool;
     worker_id : int;
-    rng       : Random.State.t
-
+    rng       : Random.State.t;
+    steal_policy : steal_policy
 }
 
 (* A deque_pool is a type containing:
@@ -30,45 +35,50 @@ and deque_pool = {
     size    : int;          (* number of domains *)
     next_worker : int Atomic.t;
     steal_count : int Atomic.t;
-    task_count : int Atomic.t  (* the total number of tasks completed *)
+    task_count : int Atomic.t;  (* the total number of tasks completed *)
+    steal_policy : steal_policy
 }
 
 let make_ctx pool worker_id = {
     pool = pool ;
     worker_id = worker_id;
-    rng       = Random.State.make_self_init ()
+    rng       = Random.State.make_self_init ();
+    steal_policy = pool.steal_policy
 }
 
-let create_pool n = {
-     deques = Array.init n (fun _ -> Deque.create 10);
-     pending = Atomic.make 0;
-     size    = n;
-     next_worker = Atomic.make 0;
-     steal_count = Atomic.make 0;
-     task_count  = Atomic.make 0
+let create_pool n policy = {
+    deques = Array.init n (fun _ -> Deque.create 10);
+    pending = Atomic.make 0;
+    size    = n;
+    next_worker = Atomic.make 0;
+    steal_count = Atomic.make 0;
+    task_count  = Atomic.make 0;
+    steal_policy = policy
  }
 
 let run_task (Task tsk) ctx = tsk ctx
 
-(* The policy for stealing across domains is (for now) randomly picking up
-   a domain to steal tasks from *)
+(* Updated: stealing across domains now occurs according to the policy set *)
 let try_steal ctx =
-    let victim = ref (Random.State.int ctx.rng ctx.pool.size) in
-
-    (* ensure tasks are stolen from other domains *)
-    while !victim = ctx.worker_id do
-        victim := Random.State.int ctx.rng ctx.pool.size
-    done;
-    (* once another victim domain is determined *)
-    match Deque.steal ctx.pool.deques.(!victim) with
-    | Deque.Value task ->
-            Atomic.incr ctx.pool.steal_count;
-            run_task task ctx;
-            Atomic.decr ctx.pool.pending; (* one less pending task *)
-            Atomic.incr ctx.pool.task_count (* one more task completed *)
-    | Deque.Empty
-    | Deque.Abort -> ()
-
+  let victim = match ctx.steal_policy with
+    | Random ->
+        let v = ref (Random.State.int ctx.rng ctx.pool.size) in
+        (* ensure tasks are stolen from other domains *)
+        while !v = ctx.worker_id do
+          v := Random.State.int ctx.rng ctx.pool.size
+        done;
+        !v
+    | RoundRobin ->
+        (ctx.worker_id + 1) mod ctx.pool.size
+  in
+ (* once another victim domain is determined *)
+  match Deque.steal ctx.pool.deques.(victim) with
+  | Deque.Value task ->
+      Atomic.fetch_and_add ctx.pool.steal_count 1 |> ignore;
+      run_task task ctx;
+      Atomic.decr ctx.pool.pending; (* one less pending task *)
+      Atomic.incr ctx.pool.task_count (* one more task completed *)
+  | Deque.Empty | Deque.Abort -> ()
 
 (* If join were to keep waiting for a result, then work across domains
    would be blocked. The work_until loop ensures that while the current
@@ -139,9 +149,8 @@ type stats = {
   steal_ratio : float;
 }
 
-let run ~num_workers ~initial_tasks =
-  let pool = create_pool num_workers in
-  Atomic.set pool.pending (List.length initial_tasks);
+let run ~num_workers ~steal_policy ~initial_tasks =
+  let pool = create_pool num_workers steal_policy in
 
   (* submit puts the initial task into the pool using a round-robin
        counter maintained in the pool. This is ensure that the initial
