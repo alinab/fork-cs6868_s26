@@ -29,7 +29,8 @@ and deque_pool = {
     pending : int Atomic.t;
     size    : int;          (* number of domains *)
     next_worker : int Atomic.t;
-    steal_count : int Atomic.t
+    steal_count : int Atomic.t;
+    task_count : int Atomic.t  (* the total number of tasks completed *)
 }
 
 let make_ctx pool worker_id = {
@@ -43,7 +44,8 @@ let create_pool n = {
      pending = Atomic.make 0;
      size    = n;
      next_worker = Atomic.make 0;
-     steal_count = Atomic.make 0
+     steal_count = Atomic.make 0;
+     task_count  = Atomic.make 0
  }
 
 let run_task (Task tsk) ctx = tsk ctx
@@ -62,7 +64,8 @@ let try_steal ctx =
     | Deque.Value task ->
             Atomic.incr ctx.pool.steal_count;
             run_task task ctx;
-            Atomic.decr ctx.pool.pending (* one less pending task *)
+            Atomic.decr ctx.pool.pending; (* one less pending task *)
+            Atomic.incr ctx.pool.task_count (* one more task completed *)
     | Deque.Empty
     | Deque.Abort -> ()
 
@@ -77,7 +80,8 @@ let work_until ctx cond =
         | Deque.Value task ->
                 run_task task ctx; (* run the task popped from the domain's
                                       own deque *)
-                Atomic.decr ctx.pool.pending (* one less pending task *)
+                Atomic.decr ctx.pool.pending; (* one less pending task *)
+                Atomic.incr ctx.pool.task_count (* one more task completed *)
         | Deque.Empty
         | Deque.Abort -> try_steal ctx (* steal tasks from other deques when
                                         a domain's own deque is empty or
@@ -129,23 +133,36 @@ let submit pool task =
 let work_loop ctx =
   work_until ctx (fun () -> Atomic.get ctx.pool.pending = 0)
 
-let run ~num_workers ~initial_tasks =
-    let pool = create_pool num_workers in
+type stats = {
+  steal_count : int;
+  task_count  : int;
+  steal_ratio : float;
+}
 
-    (* submit puts the initial task into the pool using a round-robin
+let run ~num_workers ~initial_tasks =
+  let pool = create_pool num_workers in
+  Atomic.set pool.pending (List.length initial_tasks);
+
+  (* submit puts the initial task into the pool using a round-robin
        counter maintained in the pool. This is ensure that the initial
        distributions of tasks to all deques in the pool is as balanced
        as possible *)
-    List.iter (submit pool) initial_tasks;
+  List.iter (submit pool) initial_tasks;
 
-    let work_domains = Array.init (num_workers - 1) (fun i ->
-        Domain.spawn (fun () ->
-           work_loop (make_ctx pool (i + 1))
-         )
-     ) in
-     (* current domain becomes worker 0 *)
-     work_loop (make_ctx pool 0);
-     (* wait for all domains *)
-     Array.iter Domain.join work_domains;
-     Atomic.get pool.steal_count
+  let work_domains = Array.init (num_workers - 1) (fun i ->
+    Domain.spawn (fun () -> work_loop (make_ctx pool (i + 1)))
+  ) in
+  (* current domain becomes worker 0 *)
+  work_loop (make_ctx pool 0);
 
+  (* wait for all domains *)
+  Array.iter Domain.join work_domains;
+
+  let sc = Atomic.get pool.steal_count in
+  let tc = Atomic.get pool.task_count in
+  {
+    steal_count = sc;
+    task_count  = tc;
+    steal_ratio = if tc = 0 then 0.0
+                  else float_of_int sc /. float_of_int tc;
+  }
