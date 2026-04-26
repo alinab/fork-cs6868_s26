@@ -560,13 +560,32 @@ With threshold=30 there are only 545 tasks — 16 workers competing for 545 task
 means many workers finish their local tasks quickly and must steal from others.
 
 The throughput is higher for the round-robin policy than for the random one.
-% Example figure:
+
+%%===========================================================================
 \begin{figure}[h]
    \centering
-   \includegraphics[width=0.8\linewidth]{outputs/mergesort_combined.png}
-   \caption{Mergesort}
+   \includegraphics[width=0.9\linewidth]{outputs/mergesort_combined_throughput.png}
+   \caption{Mergesort benchmarks}
    \label{fig:Mergesort benchmarks}
  \end{figure}
+
+The mergesort benchmarks show that beyond 4 domains, memory contention increases
+and throughput degrades i.e. adding more workers hurts than helps execution.
+In the naive scheduler, the mutex protecting the shared queue becomes a severe
+bottleneck when combined with memory bus contention. Work-stealing avoids this
+by keeping operations local to the deques.
+
+The round-robin panel shows a large error bar at workers=4 with threshold=5000
+— this reflects the deadlock(livelock) risk we encountered earlier where round-robin
+workers cycle through each other without finding work when tasks are scarce.
+
+Mergesort's unbalanced merge steps mean coarser tasks have very different
+execution times — a top-level merge of 500k elements takes far longer than a
+leaf merge of 500 elements. This imbalance drives more stealing at higher thresholds.
+
+The point where naive throughput crosses below work-stealing is at workers=8 for
+random and workers=4 for round-robin — this is the practical threshold above
+which work-stealing is worth the additional complexity for this workload.
 
 % =============================================================================
 \section{Reflection on the Use of LLMs}
