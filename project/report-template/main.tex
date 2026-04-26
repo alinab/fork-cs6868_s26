@@ -169,11 +169,11 @@ The goals of the project are as follows:
       \item[Compute-bound] problems, where execution speed is primarily
       determined by the rate at which the CPU executes tasks:
       (1)~Parallel Fibonacci,
+      (2)~Parallel map over an array.
 
       \item[Memory-bound] problems, where execution speed is primarily
       determined by the rate at which data is read from and written to memory:
       (1)~Parallel merge sort,
-      (2)~Parallel map over an array.
      \end{description}
 
      For each benchmark we measure the following metrics across both the
@@ -541,6 +541,7 @@ mutex-protected shared-queue scheduler described in
 
 
 %%===========================================================================
+\subsection{Fibonacci benchmarks}
 \begin{figure}[h]
    \centering
    \includegraphics[width=0.9\linewidth]{outputs/fib_combined_throughput.png}
@@ -561,7 +562,9 @@ means many workers finish their local tasks quickly and must steal from others.
 
 The throughput is higher for the round-robin policy than for the random one.
 
+
 %%===========================================================================
+\subsection{Mergesort benchmarks}
 \begin{figure}[h]
    \centering
    \includegraphics[width=0.9\linewidth]{outputs/mergesort_combined_throughput.png}
@@ -640,8 +643,8 @@ Claude's Sonnet 4.6 (Adaptive) model was the only one used for the following:
      (5)~cleaning up some LaTeX code
 
 \paragraph{What worked well.}
-We think the completing this project worked fairly well given the time
-constaint. In terms of helping work out functions, module designs etc., it acted
+We think the completing this project worked fairly well. In terms of helping
+work out functions, module designs etc., it acted
 as a teacher in prompting us to think a bit first on what was needed, try to
 write the necessary code and help come up with a correction or completely new
 piece if one was stuck. In terms of the qcheck test, it was crucial in helping
@@ -656,19 +659,20 @@ Minor things such as suggesting OCaml's $Atomic.fetch\_and\_add$ when
 $Atomic.incr$ or $Atomic.decr$ is perfectly fine. The non-adaptive model for
 Sonnet made a mistake when the paper was initially being read and worked out -
 it understood $pop\_bottom$ to occur from the top index of the deque, an
-impossibility. In another instance, while trying to modify some code, it
-duplicated an $Array$ function which led to a significant debugging effort.
-However, in a back-and-forth with Claude, it itself helped pinpoint the error
-and helped fix it.
+impossibility. In another instance, while trying to modify some code in the
+work-stealing scheduler, it duplicated an $Array$ function which led to a
+significant debugging effort. In a subsequent back-and-forth with Claude to
+understand where the error could have cropped up, it itself helped pinpoint the
+error and so helped fix it.
 
 \paragraph{What was surprising.}
-The patience with which it would help think through something. This is the first
+The patience with which it would help think through something. This is our first
 major project where an LLM has been used to think through and work out a
-research paper, so that was surprising. The need for adaptive models is a must
-as less powerful models are optimized for quick answers and can come up with
-anyting under pressure. At times the unecessary verbosity of something it came
-up with was also very surprising, given it should have aware of simpler
-alternatives (API functions etc.)
+research paper, so that was pleasantly surprising. The need for adaptive models
+is a must as less powerful models are optimized for quick answers and tend to
+come up with any answers under pressure. At times the unecessary verbosity of
+something it came up with was also very surprising, given it should be aware of
+simpler alternatives (API functions etc.)
 
 \paragraph{What was difficult.}
 While Claude helped in the translation of paper's code for deques from Java to
@@ -679,16 +683,13 @@ surprisingly very good at helping work out the scheduler design and
 implementation but it needed help in writing simpler code.
 
 \paragraph{Your overall assessment.}
-We would like to use the metaphor of electric bicycles (bicycles with an
-electric battery attached to them). Such bicycles make it very easy to bike up
-steep slopes and long distances but without them, one is very limited in one's
-skills; the same applies in this case. While Claude was crucial in helping
-understand and design the project in a short time, it would be in our
-long-term benefit to approach the problem much more slowly, look at existing
+While Claude was crucial in helping work through major parts of and design the
+project in a short time, it would be in our long-term benefit to approach the
+problem much more slowly, look at existing
 codebases, struggle a bit more, perhaps even keep the problem aside for a while
 and only then approach a tool such as Claude because it is very dangerous to
-use it as an easy resource to come up with answers to, in the end, fool oneself
-in illusion of really understanding something.
+use it as an easy resource to come up with answers to and in the end fool oneself
+into illusion of really understanding something one does not.
 
 
 % =============================================================================
