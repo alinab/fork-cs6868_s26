@@ -41,11 +41,12 @@
   keepspaces=true,
   showstringspaces=false,
 }
+\setlength{\parskip}{0.5em}
 
 % --- Title block --------------------------------------------------------------
 \title{%
   \textbf{CS6868 Research Mini-Project} \\[0.3em]
-  \Large An investigtion into Parallel Task Scheduling using Dynamic
+  \Large An investigation into Parallel Task Scheduling using Dynamic
   Circular Work-stealing Deques (OCaml implementation)
 }
 \author{%
@@ -62,8 +63,6 @@
 
 \begin{abstract}
 
-
-\setlength{\parskip}{0.5em}
 This project attempts to build a user-level task scheduler that can distribute
 tasks across parallel OCaml domains and use the observations across them to measure
 the efficiency of work-stealing across domains. Work-stealing is a paradigm
@@ -73,8 +72,6 @@ overall program execution. At the same time, this introduces contention with
 possibly multiple domains trying to steal from a domain that may be about to
 pick up the same task for execution locally.
 
-\setlength{\parskip}{0.5em}
-
 \cite{arora1998thread} originally introduced this idea of using array-based deques (double-ended
 queues) for managing tasks across multiprocessors. With fixed-size arrays,
 inefficient memory usage and array overflow were the fundamental problems. Our
@@ -83,12 +80,10 @@ dynamic cyclic arrays:  arrays can grow or shrink as needed and using a cyclic
 array ensures the overflow problem is only constrained by the number of bits
 used for arrays.
 
-\setlength{\parskip}{0.5em}
-
-We implemented the data structures in the paper, build a
+We implemented the data structures in the paper, built a
 parallel task scheduler to run a set of parallelizable programs that may be
 memory-bound or compute-bound. We discovered that in terms of program speedup,
-task stealing and througput are:
+task stealing and throughput are:
 
 
 %Briefly (150--200 words) describe the problem you tackled, your approach, the
@@ -101,8 +96,6 @@ task stealing and througput are:
 \label{sec:goals}
 % =============================================================================
 
-\setlength{\parskip}{0.5em}
-
 The goals of the project are as follows:
 
 \begin{enumerate}
@@ -113,7 +106,7 @@ The goals of the project are as follows:
      port the basic methods presented in the paper -- pop, push and steal --
      from Java to OCaml. For ensuring that deque stealing is
      guaranteed to be done only by one domain, OCaml's Atomic module, especially
-     it's compare$\_$and$\_$set instruction will be crucial to our work.
+     its compare$\_$and$\_$set instruction will be crucial to our work.
 
    \item To implement a user-level parallel task scheduler: This
     scheduler will take a recursively computable problem and divide it into
@@ -138,7 +131,7 @@ The goals of the project are as follows:
 
      Scheduler domains/deques can steal from each other using different
      strategies. The easiest strategy one can implement is randomly picking up
-     a domain other than itself. Another one, suggessted in the problem statement
+     a domain other than itself. Another one, suggested in the problem statement
      given to us, is a round-robin system where each domain attempts to steal
      from the next one in a specified order. We will implement both and measure
      outputs for both strategies.
@@ -212,11 +205,9 @@ The goals of the project are as follows:
 
 
 Definition: A deque is a double-ended queue which can exhibit LIFO (stack)
-behaviour at one end and FIFO (stack) behaviour at another. Items can be pushed
+behaviour at one end and FIFO (queue) behaviour at another. Items can be pushed
 to and popped from one end (stack-like) whereas they can only be removed from
 the other end (queue-like).
-
-\setlength{\parskip}{1em}
 
 Any parallelizable problem needs to be broken down into smaller units or tasks.
 In a multiprocessor system with several processes (OCaml domains), these tasks
@@ -225,10 +216,8 @@ is complete, processes can themselves create new subtasks to be stored in a
 data structure local to the process. As soon as the domain can process these
 subtasks, they are removed from the structure and executed.
 
-
-\setlength{\parskip}{1em}
-\cite{AoMPP} describes two paradigms on sharing tasks in a shared-memmory system with
-mutiple processors - work dealing and work stealing. Work-dealing involves
+\cite{AoMPP} describes two paradigms on sharing tasks in a shared-memory system with
+multiple processors - work dealing and work stealing. Work-dealing involves
 work deques with more tasks than others giving away some tasks to other deques
 until the numbers of tasks are equalized between them. This requires both
 deques to stop what they are doing until task sharing is complete. The
@@ -236,7 +225,6 @@ determination on when to share is made when the number of tasks exceed a
 predetermined limit and requires multiple queues to stop and co-ordinate.
 
 
-\setlength{\parskip}{1em}
 Work-stealing flips the onus on empty work deques to take tasks away from busier
 deques. With multiple possible empty deques, stealing puts more contention
 on busier deques but the clever trick of only stealing from one end of the deque
@@ -248,13 +236,17 @@ only one element in the deque that can be either stolen (by multiple domains)
 or popped next by the local domain.
 
 
-\setlength{\parskip}{1em}
 The \cite{arora1998thread} implements a user-level task scheduler based on
 array-based deques with work-stealing among processes as described above. The
 three main methods for the ABP deque are:
 
 
-\includegraphics{deque_ops}
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\linewidth]{deque_ops}
+  \caption{The three operations of the work-stealing deque.}
+  \label{fig:deque-ops}
+\end{figure}
 
 \begin{itemize}[noitemsep, nosep]
     \item pushBottom o: which pushes o to the bottom end of the deque
@@ -264,7 +256,7 @@ three main methods for the ABP deque are:
         deque, one of the three values can be returned:
        \begin{itemize}[noitemsep]
            \item if a task is successfully stolen from the top end of the deque,
-                 then that task is returned returned
+                 then that task is returned
            \item if the local deque is empty, then an Empty value is returned
            \item if the stealing process loses out to another stealing process,
                  then an Abort value is returned.
@@ -277,7 +269,7 @@ are of fixed size. Changing these to arrays to be cyclic - where the top and
 the bottom indices are reset to point to the beginning of the array when the
 deque
 becomes empty - makes overflow less frequent but does not rule out its
-occurence. A subsequest [Hendler, Lev and Shavit] used a list of arrays to
+occurence. A subsequent design from \cite{hendler2005dynamic} used a list of arrays to
 address this problem but these arrays were not cyclic and using the list of
 arrays presented a more complicated algorithm to reason about in terms of time
 and space complexity.
@@ -331,7 +323,7 @@ array size. On growing the array, moving items into the newer, larger-sized
 array, there is no need to update top or bottom although one must always keep in
 mind that the actual array indices in this array may be different.
 
-The top and bottom indices operate on oppsosite ends of the deque and only
+The top and bottom indices operate on opposite ends of the deque and only
 contend when the last element can be either popped by the local process or stolen
 by another process. For this, top is only ever modified by the $steal$ operation
 and its value is never decremented indicating a linearized timeline of items
@@ -382,11 +374,10 @@ The deque stores all items in the active array data structure which is defined
 as an atomic reference as are the top and bottom indices. This is to ensure the
 absence of data races between local and stealing processes acting on the deque.
 
-The Atomic.compare\_and\_swap is used to ensure that only one among
+The Atomic.compare\_and\_set is used to ensure that only one among
 possibly multiple competing stealing processes can take an item off the top
 end of the deque. The process which succeeds returns with the item wrapped in a
 Value, others return an Abort indicating an aborted attempt to steal.
-
 
 In the $steal$ method, the top index can only be less than the bottom index
 when another process steals from the local deque i.e. top = top + 1 and
@@ -421,7 +412,7 @@ let shrink _array ~bottom ~top =
     shrunk_array
 \end{lstlisting}
 
-Based on the code outlined in the \cite{arora1998thread} paper, the circular array only stores
+Based on the code outlined in the  \cite{chase2005dynamic} paper, the circular array only stores
 the log of the size, not the size itself. This makes the growing
 (\href{https://github.com/alinab/fork-cs6868_s26/commit/8324758fc3e51c064bcb5e6a216e97d5cc356c15}{8324758})
 and shrinking
@@ -488,12 +479,14 @@ push and pop tasks from the bottom of their own deque in a lock-free manner,
 while idle workers choose a random domain's deque to steal tasks from using a
 compare-and-swap (CAS).
 
-Tasks receive a context ($ctx$) containing the pool of all deques. The pool
+Each task receive a context ($ctx$) containing the pool of all deques. The pool
 keeps a running count of pending tasks, an array of deques containing tasks,
-the count of how many successful steals have occurred. When fork --
-which pushes a child task onto the local deque and returns a future -- a
-placeholder which will eventually be filled with the result of the child task --
-the number of pending tasks is incremented. join spin-blocks on the spawned task
+the count of how many successful steals have occurred. Tasks are broken down via \texttt{fork}, which pushes a child task onto the
+local deque and returns a future — a placeholder that will eventually be filled
+with the result of the child task — incrementing the pending task count.
+\texttt{join} blocks logically on the spawned task but keeps the domain
+productive by continuing to execute and steal tasks until the awaited future
+is filled. \texttt{join} spin-blocks on the spawned task
 that is yet to be executed and return a result but keeps the domain productive
 by continuing to execute and steal tasks until the awaited future is filled.
 This design ensures that synchronization cost is proportional to stealing
@@ -528,7 +521,7 @@ two parallel domains, violating the deque's owner/thief constraint where only
 one domain can call $push\_bottom$ and $pop\_bottom$ while $steal$ is called by
 the other domain in parallel. Also, returning a Deque.Abort value has no
 sequential equivalent causing spurious linearizability failures i.e. only if an
-actual Value is returned can be pop\_bottom or an steal operation be successful.
+actual Value is returned can be $pop\_bottom$ or an steal operation be successful.
 Otherwise an empty deque or a failed steal attempt never actually return a
 value and must be treated as semantically equal results when concurrent
 operations on parallel domains are executed.
@@ -550,7 +543,8 @@ an error (fixed in
 \href{https://github.com/alinab/fork-cs6868_s26/commit/680e1ae372df43e5ff2115d4176b6824b3091111}{680e1ae}).
 TSAN was throwing up a data race on the $push\_bottom$ operation. The problem
 was that $push\_bottom$ was reading the $active\_array$ i.e. the array backing
-the deque and potentially growing it. However a concurrent steal operation may have reading
+the deque and potentially growing it. However a concurrent steal operation may
+have been reading
 the $active\_array$ between the $grow$ operation and the $put\_item$ operation.
 Ensuring that the swap between the older and the grown array is atomic fixed
 this issue.
@@ -638,48 +632,6 @@ values outside the GADT match before comparing.
 
 Discuss what the numbers \emph{mean}. Where did the algorithm scale well?
 Where did it break down? Did the results match your prior expectations?
-
-% =============================================================================
-\section{Reflection on the Use of LLMs}
-\label{sec:llm}
-% =============================================================================
-
-% This section is required and is graded as part of the report. Be specific
-% and honest -- we are more interested in what you learned from working with
-% the LLM than in a polished narrative.
-
-\paragraph{Tools and models used.}
-List every LLM-backed tool you used (e.g., GitHub Copilot, ChatGPT, Claude,
-Gemini, Cursor), the specific model version where relevant
-(e.g., \emph{GPT-5}, \emph{Claude Sonnet 4.6}, \emph{Gemini 2.5 Pro}), and
-roughly for what --- code generation, debugging, explaining a paper, writing
-test cases, drafting prose, generating plots, etc.
-
-\paragraph{What worked well.}
-Concrete examples where the LLM genuinely accelerated your work. Did it
-correctly implement a subtle CAS loop on the first try? Did it explain a
-paper better than the paper did? Did it catch a race you had missed? Cite
-specific commits or passages if you can.
-
-\paragraph{What did not work.}
-Concrete examples where the LLM got it wrong or led you astray --- wrong
-memory ordering, subtly broken retry logic, confident but incorrect
-explanations, hallucinated API calls, plausible-looking citations that did
-not exist, etc. How did you catch the mistake?
-
-\paragraph{What was surprising.}
-Anything you did not expect --- both positive (unexpectedly good at X) and
-negative (unexpectedly bad at Y). Differences between models or tools?
-
-\paragraph{What was difficult.}
-Parts of the project where the LLM was \emph{unable to substitute for
-understanding} --- reasoning about memory models, debugging a rare
-interleaving, justifying linearisation points, choosing between design
-alternatives. What did you end up having to learn yourself?
-
-\paragraph{Your overall assessment.}
-One or two sentences: did the LLM net help or hurt this project? Would you
-use it the same way again?
 
 % =============================================================================
 \section{Conclusions}
