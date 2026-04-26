@@ -90,13 +90,14 @@ let k = 3
    almost immediately arise.
 *)
 let perhaps_shrink deq ~bottom ~top =
-    let a = Atomic.get deq.active_array in
-    let num_elements = bottom - top in
-    let curr_size = Circular_array.size a in
-    if (curr_size > 1 && num_elements < (curr_size / k)) then
-       Circular_array.shrink a ~bottom:bottom ~top:top
-    else
-        a
+  let a = Atomic.get deq.active_array in
+  let curr_size = Circular_array.size a in
+  if curr_size > 1 && bottom - top < curr_size / k then begin
+    let new_a = Circular_array.shrink a ~bottom ~top in
+    Atomic.set deq.active_array new_a
+    (* old array becomes unreachable from owner
+       GC will collect it once no thief holds a reference *)
+  end
 
 (* Pops an item from the bottom of the deque. With the bottom
    index always incremented by 1 after a push, pop must first
@@ -133,8 +134,7 @@ let pop_bottom deq =
       let a = Atomic.get deq.active_array in
       let task = Circular_array.get_item a b in
       if (size > 0) then begin
-          let a' = perhaps_shrink deq ~bottom:b ~top:t
-          in Atomic.set deq.active_array a';
+          perhaps_shrink deq ~bottom:b ~top:t;
           Value task
       end
       (* size = 1 i.e. popping the last remaining element races with thieves
