@@ -701,21 +701,64 @@ into illusion of really understanding something one does not.
 %findings. State the limitations of your work honestly. Suggest what you
 %would do next given more time.
 
-%With the shared pool model, the extra available buffers
-%for all the deques are kept in a shared pool. Whenever the
-%deque’s owner needs a bigger array, it allocates one (of the
-%appropriate size) from the pool, and whenever it shrinks to
-%a smaller array and does not need the bigger array anymore,
-%it can return it to the pool. There are two main advantages
-%for the shared pool model: First, it is much less expensive
-%to reclaim and allocate buffers from the shared pool than
-%to allocate them from the heap and use the garbage collector for reclamation. Second, as described in this section, by
-%assuming that the reclaimed buffers are not returned to a
-%global use by the operating system, the deque’s owner can
-%reclaim a buffer while there may be still some thieves referencing it (something that the garage collector will not do),
-%which leads to a better use of the allocated space
-%
+Work-stealing's advantage is most
+pronounced for \emph{memory-bound, structurally unbalanced} workloads
+such as parallel mergesort, where the dynamic rebalancing of the
+deque-per-worker design avoids the mutex contention that cripples the
+naive scheduler at high worker counts. For \emph{compute-bound, balanced}
+workloads such as parallel fibonacci and prime map, the naive scheduler
+is surprisingly competitive — and superior at very high worker counts —
+because the balanced task distribution means workers rarely go idle and
+the mutex is rarely contested.
 
+The steal ratio data validates the theoretical foundation of the
+algorithm. Across all three benchmarks and all configurations, between
+0\% and 27\% of tasks were stolen — meaning at least 73\% of all tasks
+were executed locally without any cross-domain synchronisation. The deque
+is efficient because it optimises the common case: ${push\_bottom}
+and ${pop\_bottom} are lock-free operations on the owner's local
+deque, and the expensive CAS instruction is only invoked during the less
+frequent steal operation or when the last element of the deque is contested.
+
+The comparison of steal policies shows that random victim selection is
+more stable than round-robin across all benchmarks, particularly at high
+worker counts where round-robin's deterministic cycling can cause
+contention when multiple workers target the same victim simultaneously.
+Round-robin does achieve higher speedup for fibonacci at 16 workers, but
+at the cost of higher variance and occasional deadlock under coarse task
+granularity.
+
+Task granularity has a significant and consistent effect on performance.
+Fine-grained tasks generate more parallelism and higher task throughput
+but also more scheduler overhead per unit of computation. The crossover
+threshold — below which sequential execution outperforms parallel — is
+approximately ${threshold=1000} for mergesort and
+${threshold=20} for fibonacci, confirming that the minimum viable
+task size depends heavily on the computational intensity of each task.
+
+Finally, the OCaml 5 ${Atomic} module and ${Domain} library
+provide sufficient primitives to implement a correct lock-free deque
+without resorting to unsafe operations, though ThreadSanitizer revealed
+subtle data races in early versions that required careful ordering of
+array publication and index updates. The OCaml GC (Garbage Collector) eliminates the
+need for the
+manual memory reclamation protocol described in Section 4 of the
+paper~\cite{chase2005dynamic}, significantly simplifying the
+implementation at the cost of occasional GC pauses under heavy allocation.
+
+Has we been given more time, it would have been useful to use profiling
+tools to understand cache and memory use to understand threshold tipping points
+as well as look at a few more problems for benchmarking. We would like to do so
+even after the formal submission of this project report as an addition to this.
+
+Also, as an extension of this work, it would be most interesting to
+implement a shared pool of buffers instead of letting the OCaml GC manage
+memory.  A side-by-side implementation of a scheduler with such a buffer pool
+in OCaml as well as in a language like Rust (using an existing implemention such as
+\href{https://docs.rs/crossbeam-deque/latest/crossbeam_deque/}{crossbeam} or
+creating one from scratch) would really help learn much more about
+acquire-release semantics as well as give a chance to compare implementations in
+languages with different memory models.
 
 % =============================================================================
 \section*{Contributions}
