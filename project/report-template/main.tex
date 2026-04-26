@@ -503,18 +503,18 @@ cross-domain coordination.
 The QCheck-Lin test involved developing a model using the $Lin\_domain.Make\_internal$ functor
 with the following types:
 
-\begin{lstlisting}[language=caml,
-caption={qcheck lin types},label={lst:qcheck-lin-test}]
-type cmd =
-  | Push  of int
-  | Pop
-  | Steal
-
-type res =
-  | RPush
-  | RPop   of int Deque.result
-  | RSteal of int Deque.result
-\end{lstlisting}
+%\begin{lstlisting}[language=caml,
+%caption={qcheck lin types},label={lst:qcheck-lin-test}]
+%type cmd =
+%  | Push  of int
+%  | Pop
+%  | Steal
+%
+%type res =
+%  | RPush
+%  | RPop   of int Deque.result
+%  | RSteal of int Deque.result
+%\end{lstlisting}
 
 The initial model was incorrect as all deque operations were spread across
 two parallel domains, violating the deque's owner/thief constraint where only
@@ -551,33 +551,33 @@ this issue.
 
 \subsubsection{QCheck-STM testing}
 
-\begin{lstlisting}[language=caml,
-caption={qcheck stm functions},label={lst:qcheck-stm-test}]
-  let init_state     = []
-  let init_sut ()    = Deque.create 10
-  let cleanup _      = ()
-
-  let next_state cmd state =
-      match cmd with
-      | Push x -> state @ [x]
-      | Pop    -> if state = [] then []
-                  else List.take (List.length state - 1) state
-      | Steal  -> if state = [] then []
-                  else List.tl state
-
-  let deque_to_option = function
-    | Deque.Value v -> Some v
-    | Deque.Empty   -> None
-    | Deque.Abort   -> None
-
-  let run cmd sut = match cmd with
-    | Push x -> Deque.push_bottom sut x; Res (unit, ())
-    | Pop    -> let v = deque_to_option (Deque.pop_bottom sut) in
-                Res (option int, v)
-    | Steal  -> let v = deque_to_option (Deque.steal sut) in
-                Res (option int, v)
-
-\end{lstlisting}
+%\begin{lstlisting}[language=caml,
+%caption={qcheck stm functions},label={lst:qcheck-stm-test}]
+%  let init_state     = []
+%  let init_sut ()    = Deque.create 10
+%  let cleanup _      = ()
+%
+%  let next_state cmd state =
+%      match cmd with
+%      | Push x -> state @ [x]
+%      | Pop    -> if state = [] then []
+%                  else List.take (List.length state - 1) state
+%      | Steal  -> if state = [] then []
+%                  else List.tl state
+%
+%  let deque_to_option = function
+%    | Deque.Value v -> Some v
+%    | Deque.Empty   -> None
+%    | Deque.Abort   -> None
+%
+%  let run cmd sut = match cmd with
+%    | Push x -> Deque.push_bottom sut x; Res (unit, ())
+%    | Pop    -> let v = deque_to_option (Deque.pop_bottom sut) in
+%                Res (option int, v)
+%    | Steal  -> let v = deque_to_option (Deque.steal sut) in
+%                Res (option int, v)
+%
+%\end{lstlisting}
 
 The QCheck-STM test required a more careful design than the Lin test because
 STM checks exact values against a sequential model rather than just
@@ -594,34 +594,66 @@ matching inside the $postcond$ caused OCaml's type checker to report ambiguous
 type escaping errors. The fix was to compute expected values as plain int option
 values outside the GADT match before comparing.
 
-%The second major hurdle was the same owner/thief constraint from the Lin test -
-%$STM\_domain.Make$ distributes all operations across both parallel domains,
-%causing $push\_bottom$ and $pop\_bottom$ to race concurrently and crash with
-%index out of bounds. The fix was to use the $arb\_triple$ with separate
-%generators for each domain similar to the qcheck-lin test. A third subtlety was
-%that Abort needed to map to None in the result representation since STM's
-%sequential model has no concept of a lost race, and the postcond function
-%needed to accept None as valid whenever the model predicted either an empty
-%deque or a racing steal. The final test combines $STM_sequential.Make$ for
-%single-domain value correctness, $STM_domain.Make$ with $arb\_triple$ for
-%parallel linearizability, and $stress\_prop\_par$ for crash safety.
-%
+The second major hurdle was the same owner/thief constraint from the Lin test -
+$STM\_domain.Make$ distributes all operations across both parallel domains,
+causing $push\_bottom$ and $pop\_bottom$ to race concurrently and crash with
+index out of bounds. The fix was to use the $arb\_triple$ with separate
+generators for each domain similar to the qcheck-lin test. A third subtlety was
+that Abort needed to map to None in the result representation since STM's
+sequential model has no concept of a lost race, and the postcond function
+needed to accept None as valid whenever the model predicted either an empty
+deque or a racing steal. The final test combines $STM_sequential.Make$ for
+single-domain value correctness, $STM_domain.Make$ with $arb\_triple$ for
+parallel linearizability, and $stress\_prop\_par$ for crash safety.
+
 % =============================================================================
 \section{Evaluation}
 \label{sec:evaluation}
 % =============================================================================
 
-% Investigate the impact of **steal policy** (random victim vs. round-robin)
-%   and **task granularity** (varying the threshold at which recursion stops and
-%   sequential execution takes over) on performance.
+%Investigate the impact of **steal policy** (random victim vs. round-robin)
+%  and **task granularity** (varying the threshold at which recursion stops and
+%  sequential execution takes over) on performance.
 %How effectively does work stealing balance load across OCaml 5 domains for
 %irregular parallel workloads, and what is the relationship between task
 %granularity, steal frequency, and overall speedup?
-
+%
 %Describe your experimental setup (hardware, number of domains/threads, how
 %you measured, how many runs, how you handled warm-up and noise). Present
 %results with plots or tables.
-%
+
+\subsection{Experimental Setup}
+
+All benchmarks were run on a personal machine running macOS with an
+Apple M-series processor. The machine has four performance cores and four
+efficiency cores with a shared L2 cache. All measurements were taken using
+\texttt{OCaml 5.4} compiled to native code with optimisation flag \texttt{-O3}.
+
+Each benchmark configuration was run $10$ times after $3$ warm-up runs whose
+results were discarded. Warm-up runs allow the operating system scheduler to
+stabilise domain placement, the OCaml minor heap to reach a steady state, and
+frequently accessed data to populate the CPU cache before measurements begin.
+
+To handle noise, we report the mean wall-clock time $\bar{t}$, the standard
+deviation $\sigma$, and the minimum observed time $t_{\min}$ across the 10
+measured runs. Wall-clock time is measured using \texttt{Unix.gettimeofday}
+which has microsecond resolution on the test machine. Each run uses a freshly
+generated random array as input to avoid cache effects from reusing the same
+data across runs.
+
+Speedup is computed relative to a warmed sequential baseline using
+\texttt{Array.sort} with the standard \texttt{compare} function:
+
+\[
+  \text{speedup} = \frac{\bar{t}_{\text{sequential}}}{\bar{t}_{\text{parallel}}}
+\]
+
+All benchmarks are run for both the work-stealing scheduler and the
+mutex-protected shared-queue scheduler described in
+\cref{sec:tasks}, under varying worker counts
+$\in \{1, 2, 4, 8, 16\}$ and task granularity thresholds $\in \{500,
+1000, 2000, 5000\}$.
+
 % Example figure:
 % \begin{figure}[h]
 %   \centering
