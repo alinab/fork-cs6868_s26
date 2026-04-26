@@ -587,7 +587,43 @@ The point where naive throughput crosses below work-stealing is at workers=8 for
 random and workers=4 for round-robin — this is the practical threshold above
 which work-stealing is worth the additional complexity for this workload.
 
+
+%%===========================================================================
+\subsection{Parallel map benchmarks}
+\begin{figure}[h]
+   \centering
+   \includegraphics[width=0.9\linewidth]{outputs/map_combined_throughput.png }
+   \caption{Parallel map benchmarks}
+   \label{fig:parallel map benchmarks}
+ \end{figure}
+
+The naive outperforms work-stealing at all worker counts beyond 4.
+The primality test () is more balanced than mergesort — each array chunk does
+roughly similar work — so the naive queue distributes work well without
+needing rebalancing.
+
+The large error bar at workers=4, threshold=500 in the round-robin panel reflects
+the same deadlock instability seen in mergesort — with only ~ 20000 tasks and
+4 workers cycling in sequence, some runs hit contention while others do not.
+
+The map throughput is orders of magnitude higher than mergesort because each
+task is much smaller — checking primality of one chunk takes microseconds vs
+milliseconds for sorting. This makes the throughput difference between thresholds
+very dramatic.
+
+Naive throughput is remarkably stable across worker counts — the balanced workload
+means the mutex is rarely contested and workers always find tasks immediately.
+The throughput drop at 16 workers reflects increased steal overhead — with 16
+workers competing for a balanced workload, more time is spent in $try\_steal$
+failing to find work than actually executing tasks.
+
+The prime map sits between fibonacci and mergesort — compute-bound like fibonacci
+but balanced like a simple array operation. This balance is why naive performs
+well — the paper's work-stealing advantage is most visible for irregular unbalanced workloads.
+
+
 % =============================================================================
+
 \section{Reflection on the Use of LLMs}
 \label{sec:llm}
 % =============================================================================
