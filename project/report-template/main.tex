@@ -588,24 +588,24 @@ $push\_bottom$
 operation, removing from the back for the $pop\_bottom$ operation, and
 removing from the front for the $steal$ operation.
 
-The first major hurdle was navigating STM's GADT-based res type — the Res
+A major hurdle was navigating STM's GADT-based res type — the Res
 constructor wraps values alongside a $ty\_show$ combinator, and naive pattern
 matching inside the $postcond$ caused OCaml's type checker to report ambiguous
 type escaping errors. The fix was to compute expected values as plain int option
 values outside the GADT match before comparing.
 
-The second major hurdle was the same owner/thief constraint from the Lin test -
-$STM\_domain.Make$ distributes all operations across both parallel domains,
-causing $push\_bottom$ and $pop\_bottom$ to race concurrently and crash with
-index out of bounds. The fix was to use the $arb\_triple$ with separate
-generators for each domain similar to the qcheck-lin test. A third subtlety was
-that Abort needed to map to None in the result representation since STM's
-sequential model has no concept of a lost race, and the postcond function
-needed to accept None as valid whenever the model predicted either an empty
-deque or a racing steal. The final test combines $STM_sequential.Make$ for
-single-domain value correctness, $STM_domain.Make$ with $arb\_triple$ for
-parallel linearizability, and $stress\_prop\_par$ for crash safety.
-
+%The second major hurdle was the same owner/thief constraint from the Lin test -
+%$STM\_domain.Make$ distributes all operations across both parallel domains,
+%causing $push\_bottom$ and $pop\_bottom$ to race concurrently and crash with
+%index out of bounds. The fix was to use the $arb\_triple$ with separate
+%generators for each domain similar to the qcheck-lin test. A third subtlety was
+%that Abort needed to map to None in the result representation since STM's
+%sequential model has no concept of a lost race, and the postcond function
+%needed to accept None as valid whenever the model predicted either an empty
+%deque or a racing steal. The final test combines $STM_sequential.Make$ for
+%single-domain value correctness, $STM_domain.Make$ with $arb\_triple$ for
+%parallel linearizability, and $stress\_prop\_par$ for crash safety.
+%
 % =============================================================================
 \section{Evaluation}
 \label{sec:evaluation}
@@ -655,15 +655,16 @@ $\in \{1, 2, 4, 8, 16\}$ and task granularity thresholds $\in \{500,
 1000, 2000, 5000\}$.
 
 % Example figure:
-% \begin{figure}[h]
-%   \centering
-%   \includegraphics[width=0.8\linewidth]{figures/throughput.pdf}
-%   \caption{Throughput vs. threads under the balanced workload.}
-%   \label{fig:throughput}
-% \end{figure}
+\begin{figure}[h]
+   \centering
+   \includegraphics[width=0.8\linewidth]{outputs/fib_combined.png}
+   \caption{Fibonacci}
+   \label{fig:Fibonacci benchmarks}
+ \end{figure}
 
-Discuss what the numbers \emph{mean}. Where did the algorithm scale well?
-Where did it break down? Did the results match your prior expectations?
+
+%Discuss what the numbers \emph{mean}. Where did the algorithm scale well?
+%Where did it break down? Did the results match your prior expectations?
 
 % =============================================================================
 \section{Conclusions}
