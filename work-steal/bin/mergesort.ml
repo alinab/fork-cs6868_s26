@@ -1,4 +1,4 @@
-let warmup_runs = 1
+let warmup_runs = 3
 
 let sequential_sort arr lo hi =
   let sub = Array.sub arr lo (hi - lo) in
@@ -135,5 +135,5 @@ let run_experiment ~n ~runs =
 
 let () =
   Random.self_init ();
-  run_experiment ~n:1_000_000 ~runs:5
+  run_experiment ~n:1_000_000 ~runs:10
 

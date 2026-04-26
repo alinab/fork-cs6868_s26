@@ -1,4 +1,4 @@
-let warmup_runs = 1
+let warmup_runs = 3
 
 (* --- Sequential Fibonacci ----------------------------------------------- *)
 
@@ -101,5 +101,5 @@ let run_experiment ~n ~runs =
 
 let () =
   Random.self_init ();
-  run_experiment ~n:38 ~runs:5
+  run_experiment ~n:38 ~runs:10
 
