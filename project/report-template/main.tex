@@ -81,9 +81,8 @@ array ensures the overflow problem is only constrained by the number of bits
 used for arrays.
 
 We implemented the data structures in the paper, built a
-parallel task scheduler to run a set of parallelizable programs that may be
-memory-bound or compute-bound. We discovered that in terms of program speedup,
-task stealing and throughput are:
+parallel task scheduler to run a set of decomposable and hence
+parallelizable programs. We discovered that work-stealing:
 
 
 %Briefly (150--200 words) describe the problem you tackled, your approach, the
@@ -162,13 +161,12 @@ The goals of the project are as follows:
             in the parallel scheduler with dynamic arrays will be the key.
     \end{itemize}
 
-    We evaluate four benchmark problems, categorised by their primary bottleneck:
+    We evaluate three benchmark problems, categorised by their primary bottleneck:
 
     \begin{description}
       \item[Compute-bound] problems, where execution speed is primarily
       determined by the rate at which the CPU executes tasks:
       (1)~Parallel Fibonacci,
-      (2)~\textit{(to be added)}.
 
       \item[Memory-bound] problems, where execution speed is primarily
       determined by the rate at which data is read from and written to memory:
@@ -185,6 +183,9 @@ The goals of the project are as follows:
      and random victim selection, and
      (5)~the crossover threshold below which sequential execution outperforms
      parallel execution.
+
+     to understand the inflection points where work-stealing tasks are
+     advantgeous over other schedulers.
 
 \end{enumerate}
 
@@ -224,7 +225,6 @@ deques to stop what they are doing until task sharing is complete. The
 determination on when to share is made when the number of tasks exceed a
 predetermined limit and requires multiple queues to stop and co-ordinate.
 
-
 Work-stealing flips the onus on empty work deques to take tasks away from busier
 deques. With multiple possible empty deques, stealing puts more contention
 on busier deques but the clever trick of only stealing from one end of the deque
@@ -234,7 +234,6 @@ domains or processes may attempt to steal from one domain while the local domain
 continues to push and pop tasks from the deque. Contention occurs when there is
 only one element in the deque that can be either stolen (by multiple domains)
 or popped next by the local domain.
-
 
 The \cite{arora1998thread} implements a user-level task scheduler based on
 array-based deques with work-stealing among processes as described above. The
@@ -263,21 +262,20 @@ three main methods for the ABP deque are:
       \end{itemize}
 \end{itemize}
 
-
 The salient feature of the ABP algorithm is that the arrays backing the deques
 are of fixed size. Changing these to arrays to be cyclic - where the top and
 the bottom indices are reset to point to the beginning of the array when the
-deque
-becomes empty - makes overflow less frequent but does not rule out its
-occurence. A subsequent design from \cite{hendler2005dynamic} used a list of arrays to
-address this problem but these arrays were not cyclic and using the list of
-arrays presented a more complicated algorithm to reason about in terms of time
+deque becomes empty - makes overflow less frequent but does not rule out its
+occurence. A subsequent design from \cite{hendler2005dynamic} used a list of
+arrays to address this problem but these arrays were not cyclic and using the
+list of arrays presented a more complicated algorithm to reason about in terms of time
 and space complexity.
 
-The Chase-Lev algorithm addresses the overflow problem by using dynamic cyclic arrays.
-The only practical restriction on deque size is integer overflow in the address space.
-In our OCaml implementation, integers have a runtime representation of 63 bits,
-giving a maximum value of $2^{63} - 1 \approx 9.22 \times 10^{18}$.
+The Chase-Lev algorithm addresses the overflow problem by using dynamic cyclic
+arrays. The only practical restriction on deque size is integer overflow in the
+address space.  In our OCaml implementation, integers have a runtime
+representation of 63 bits, giving a maximum value of
+$2^{63} - 1 \approx 9.22 \times 10^{18}$.
 
 Given the operation rate quoted in the paper of $4 \times 10^{9}$ operations per second,
 the time until deque index overflow occurs is:
@@ -293,7 +291,8 @@ seconds per year:
 \frac{2.30 \times 10^{9}}{3.156 \times 10^{7}} \approx 73 \text{ years}
 \]
 
-In practical terms, integer overflow is not a concern for this algorithm on modern systems.
+In practical terms, integer overflow is not a concern for this algorithm on
+modern systems.
 
 Deques are implemented using cyclic array whose ends are indicated by two
 indices where:
@@ -353,22 +352,6 @@ separate tag field is needed unlike all earlier work-stealing algorithms.
 The implementation began with translating the code presented in \cite{chase2005dynamic}
 paper from Java to OCaml
 (\href{https://github.com/alinab/fork-cs6868_s26/commit/b7bdeac9167f5fbeaee63e81deceaf0c43733d98}{b7bdeac}).
-\begin{lstlisting}[language=caml,
-caption={deque types, CAS on top index},label={lst:deque-types}]
-type 'a result =
-    | Empty
-    | Abort
-    | Value of 'a
-
-type 'a t = {
-    bottom : int Atomic.t;
-    top    : int Atomic.t;
-    active_array : 'a Circular_array.t Atomic.t;
-}
-
-let cas_top deque_arr old_top new_top =
-    Atomic.compare_and_set deque_arr.top old_top new_top
-\end{lstlisting}
 
 The deque stores all items in the active array data structure which is defined
 as an atomic reference as are the top and bottom indices. This is to ensure the
@@ -383,37 +366,8 @@ In the $steal$ method, the top index can only be less than the bottom index
 when another process steals from the local deque i.e. top = top + 1 and
 bottom = bottom - 1 concurrently.
 
-\begin{lstlisting}[language=caml,
-caption={grow, shrink circular array},label={lst:circular-array-grow-shrink}]
-type 'a t = {
-    log_size : int;
-    segment: 'a option Atomic.t array;
-}
-
-let create log_size = {
-    log_size = log_size;
-    segment = Array.init (1 lsl log_size) (fun _ -> Atomic.make None)
-}
-
-let size _array = 1 lsl (_array.log_size)
-
-let grow _array ~bottom ~top =
-    let new_array = create (_array.log_size + 1) in
-    for i = top to bottom - 1 do
-        put_item new_array i (get_item _array i)
-    done;
-    new_array
-
-let shrink _array ~bottom ~top =
-    let shrunk_array = create (_array.log_size - 1) in
-    for i = top to bottom - 1 do
-        put_item shrunk_array i (get_item _array i)
-    done;
-    shrunk_array
-\end{lstlisting}
-
-Based on the code outlined in the  \cite{chase2005dynamic} paper, the circular array only stores
-the log of the size, not the size itself. This makes the growing
+Based on the code outlined in the \cite{chase2005dynamic} paper, the circular
+array only stores the log of the size, not the size itself. This makes the growing
 (\href{https://github.com/alinab/fork-cs6868_s26/commit/8324758fc3e51c064bcb5e6a216e97d5cc356c15}{8324758})
 and shrinking
 (\href{https://github.com/alinab/fork-cs6868_s26/commit/a9f0687fc8eb0b61dc2f059683f209be6a223649}{a9f0687})
@@ -437,40 +391,6 @@ not finish the attempt to implement this.
 
 
 \subsubsection{Scheduler implementation}
-\begin{lstlisting}[language=caml,
-caption={scheduler design},label={lst:scheduler}]
-(* scheduler.ml *)
-type task = Task of (ctx -> unit)
-
-and ctx = {
-    pool      : deque_pool;
-    worker_id : int;
-    rng       : Random.State.t
-
-}
-
-and deque_pool = {
-    deques  : task Deque.t array;
-    pending : int Atomic.t;
-    size    : int;          (* number of domains *)
-    next_worker : int Atomic.t;
-    steal_count : int Atomic.t
-}
-
-(* future.ml *)
-type 'a t = 'a option Atomic.t
-
-(* A future is initialized to None *)
-let create () = Atomic.make None
-
-let get ft = Atomic.get ft
-
-let fill ft v = if not (Atomic.compare_and_set ft None (Some v)) then
-                    failwith "Future.fill: future is already filled\n"
-
-let is_done ft = Atomic.get ft <> None
-\end{lstlisting}
-
 (\href{https://github.com/alinab/fork-cs6868_s26/blame/work-steal/work-steal/lib/scheduler.ml}{0b98700})
 
 The scheduler whose constituent types are shown above is a parallel work-stealing
@@ -481,7 +401,8 @@ compare-and-swap (CAS).
 
 Each task receive a context ($ctx$) containing the pool of all deques. The pool
 keeps a running count of pending tasks, an array of deques containing tasks,
-the count of how many successful steals have occurred. Tasks are broken down via \texttt{fork}, which pushes a child task onto the
+the count of how many successful steals have occurred. Tasks are broken down
+via \texttt{fork}, which pushes a child task onto the
 local deque and returns a future — a placeholder that will eventually be filled
 with the result of the child task — incrementing the pending task count.
 \texttt{join} blocks logically on the spawned task but keeps the domain
@@ -501,8 +422,8 @@ cross-domain coordination.
 \subsubsection{QCheck-Lin testing}
 
 The QCheck-Lin test involved developing a model using the
-$Lin\_domain.Make\_internal$ functor
-\href{https://github.com/alinab/fork-cs6868_s26/blame/work-steal/work-steal/test/test_deque_qcheck_lin.ml}{and
+$Lin\_domain.Make\_internal$ functor and
+\href{https://github.com/alinab/fork-cs6868_s26/blame/work-steal/work-steal/test/test_deque_qcheck_lin.ml}{
 types}
 
 The initial model was incorrect as all deque operations were spread across
@@ -535,8 +456,8 @@ was that $push\_bottom$ was reading the $active\_array$ i.e. the array backing
 the deque and potentially growing it. However a concurrent steal operation may
 have been reading
 the $active\_array$ between the $grow$ operation and the $put\_item$ operation.
-Ensuring that the swap between the older and the grown array is atomic fixed
-this issue.
+Ensuring that the swap between the older and the grown array was atomic (using
+the Atomic module) fixed this issue.
 
 \subsubsection{QCheck-STM testing}
 
@@ -555,18 +476,19 @@ matching inside the $postcond$ caused OCaml's type checker to report ambiguous
 type escaping errors. The fix was to compute expected values as plain int option
 values outside the GADT match before comparing.
 
-%The second major hurdle was the same owner/thief constraint from the Lin test -
-%$STM\_domain.Make$ distributes all operations across both parallel domains,
-%causing $push\_bottom$ and $pop\_bottom$ to race concurrently and crash with
-%index out of bounds. The fix was to use the $arb\_triple$ with separate
-%generators for each domain similar to the qcheck-lin test. A third subtlety was
-%that Abort needed to map to None in the result representation since STM's
-%sequential model has no concept of a lost race, and the postcond function
-%needed to accept None as valid whenever the model predicted either an empty
-%deque or a racing steal. The final test combines $STM_sequential.Make$ for
-%single-domain value correctness, $STM_domain.Make$ with $arb\_triple$ for
-%parallel linearizability, and $stress\_prop\_par$ for crash safety.
-%
+The second hurdle was the same owner/thief constraint from the Lin test -
+$STM\_domain.Make$ distributes all operations across both parallel domains,
+causing $push\_bottom$ and $pop\_bottom$ to race concurrently and crash with
+index out of bounds. The fix was to use the $arb\_triple$ with separate
+generators for each domain similar to the qcheck-lin test. A third subtlety was
+that Abort needed to map to None in the result representation since STM's
+sequential model has no concept of a lost race, and the postcond function
+needed to accept None as valid whenever the model predicted either an empty
+deque or a racing steal. The final test combines $STM\_sequential.Make$ for
+single-domain value correctness, $STM\_domain.Make$ with $arb\_triple$ for
+parallel linearizability, and $stress\_prop\_par$ for crash safety.
+
+
 % =============================================================================
 \section{Evaluation}
 \label{sec:evaluation}
@@ -612,8 +534,8 @@ Speedup is computed relative to a warmed sequential baseline using
 All benchmarks are run for both the work-stealing scheduler and the
 mutex-protected shared-queue scheduler described in
 \cref{sec:tasks}, under varying worker counts
-$\in \{1, 2, 4, 8, 16\}$ and task granularity thresholds $\in \{500,
-1000, 2000, 5000\}$.
+($\{1, 2, 4, 8, 16\}$) and task granularity thresholds ($\{500, 1000, 2000,
+5000\}$)
 
 % Example figure:
 \begin{figure}[h]
