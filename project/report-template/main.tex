@@ -500,21 +500,10 @@ cross-domain coordination.
 
 \subsubsection{QCheck-Lin testing}
 
-The QCheck-Lin test involved developing a model using the $Lin\_domain.Make\_internal$ functor
-with the following types:
-
-%\begin{lstlisting}[language=caml,
-%caption={qcheck lin types},label={lst:qcheck-lin-test}]
-%type cmd =
-%  | Push  of int
-%  | Pop
-%  | Steal
-%
-%type res =
-%  | RPush
-%  | RPop   of int Deque.result
-%  | RSteal of int Deque.result
-%\end{lstlisting}
+The QCheck-Lin test involved developing a model using the
+$Lin\_domain.Make\_internal$ functor
+\href{https://github.com/alinab/fork-cs6868_s26/blame/work-steal/work-steal/test/test_deque_qcheck_lin.ml}{and
+types}
 
 The initial model was incorrect as all deque operations were spread across
 two parallel domains, violating the deque's owner/thief constraint where only
@@ -550,34 +539,6 @@ Ensuring that the swap between the older and the grown array is atomic fixed
 this issue.
 
 \subsubsection{QCheck-STM testing}
-
-%\begin{lstlisting}[language=caml,
-%caption={qcheck stm functions},label={lst:qcheck-stm-test}]
-%  let init_state     = []
-%  let init_sut ()    = Deque.create 10
-%  let cleanup _      = ()
-%
-%  let next_state cmd state =
-%      match cmd with
-%      | Push x -> state @ [x]
-%      | Pop    -> if state = [] then []
-%                  else List.take (List.length state - 1) state
-%      | Steal  -> if state = [] then []
-%                  else List.tl state
-%
-%  let deque_to_option = function
-%    | Deque.Value v -> Some v
-%    | Deque.Empty   -> None
-%    | Deque.Abort   -> None
-%
-%  let run cmd sut = match cmd with
-%    | Push x -> Deque.push_bottom sut x; Res (unit, ())
-%    | Pop    -> let v = deque_to_option (Deque.pop_bottom sut) in
-%                Res (option int, v)
-%    | Steal  -> let v = deque_to_option (Deque.steal sut) in
-%                Res (option int, v)
-%
-%\end{lstlisting}
 
 The QCheck-STM test required a more careful design than the Lin test because
 STM checks exact values against a sequential model rather than just
@@ -663,8 +624,18 @@ $\in \{1, 2, 4, 8, 16\}$ and task granularity thresholds $\in \{500,
  \end{figure}
 
 
+
 %Discuss what the numbers \emph{mean}. Where did the algorithm scale well?
 %Where did it break down? Did the results match your prior expectations?
+
+% Example figure:
+\begin{figure}[h]
+   \centering
+   \includegraphics[width=0.8\linewidth]{outputs/mergesort_combined.png}
+   \caption{Mergesort}
+   \label{fig:Mergesort benchmarks}
+ \end{figure}
+
 
 % =============================================================================
 \section{Conclusions}
