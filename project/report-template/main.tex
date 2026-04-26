@@ -543,16 +543,23 @@ mutex-protected shared-queue scheduler described in
 %%===========================================================================
 \begin{figure}[h]
    \centering
-   \includegraphics[width=0.8\linewidth]{outputs/fib_combined.png}
-   \caption{Fibonacci}
+   \includegraphics[width=0.9\linewidth]{outputs/fib_combined_throughput.png}
+   \caption{Fibonacci benchmarks}
    \label{fig:Fibonacci benchmarks}
  \end{figure}
 
+For the Fibonaaci problem, the benchmarks do not show any significant
+differences in speedups between the two policies, random vs round-robin. The
+benchmarks do show higher steal ratios given more workers as more workers means
+each worker gets fewer local tasks on average — the probability of going idle
+and needing to steal increases with each additional worker.
 
+With threshold=20 there are 67,645 tasks spread across 16 workers —
+each worker gets roughly 4,000 tasks locally and rarely needs to steal.
+With threshold=30 there are only 545 tasks — 16 workers competing for 545 tasks
+means many workers finish their local tasks quickly and must steal from others.
 
-%Discuss what the numbers \emph{mean}. Where did the algorithm scale well?
-%Where did it break down? Did the results match your prior expectations?
-
+The throughput is higher for the round-robin policy than for the random one.
 % Example figure:
 \begin{figure}[h]
    \centering
