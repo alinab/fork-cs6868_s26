@@ -1,5 +1,6 @@
 (library
  (name ws_deque)
- (modules circular_array deque scheduler future naive_scheduler)
+ (modules circular_array deque scheduler future naive_scheduler benchmark)
+ (libraries unix)
  (wrapped false)
  (ocamlopt_flags (:standard -O3)))
