@@ -72,7 +72,8 @@ overall program execution. At the same time, this introduces contention with
 possibly multiple domains trying to steal from a domain that may be about to
 pick up the same task for execution locally.
 
-\cite{arora1998thread} originally introduced this idea of using array-based deques (double-ended
+\cite{arora1998thread} originally introduced this idea of using array-based
+deques (double-ended
 queues) for managing tasks across multiprocessors. With fixed-size arrays,
 inefficient memory usage and array overflow were the fundamental problems. Our
 implementation is based on \cite{chase2005dynamic} which addressed both problems using
@@ -80,10 +81,11 @@ dynamic cyclic arrays:  arrays can grow or shrink as needed and using a cyclic
 array ensures the overflow problem is only constrained by the number of bits
 used for arrays.
 
-We implemented the data structures in the paper, built a
-parallel task scheduler to run a set of decomposable and hence
-parallelizable programs. We discovered that work-stealing:
-
+We implemented the deque and related data structures,  built a parallel task
+scheduler to run a set of decomposable and hence parallelizable programs. We
+want to understand the behaviour of work stealing for different classes of
+problems and use widely used programs in them as benchmarks to measure the
+actual conditions at which work-stealing is most efficient.
 
 %Briefly (150--200 words) describe the problem you tackled, your approach, the
 %headline evaluation results, and the main conclusion. Readers (the graders)
@@ -185,7 +187,7 @@ The goals of the project are as follows:
      parallel execution.
 
      to understand the inflection points where work-stealing tasks are
-     advantgeous over other schedulers.
+     advantgeous over other paradigms.
 
 \end{enumerate}
 
@@ -537,7 +539,8 @@ mutex-protected shared-queue scheduler described in
 ($\{1, 2, 4, 8, 16\}$) and task granularity thresholds ($\{500, 1000, 2000,
 5000\}$)
 
-% Example figure:
+
+%%===========================================================================
 \begin{figure}[h]
    \centering
    \includegraphics[width=0.8\linewidth]{outputs/fib_combined.png}
