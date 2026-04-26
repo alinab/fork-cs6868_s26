@@ -17,15 +17,21 @@ let std_dev arr =
   sqrt variance
 
 let print_header () =
-  Printf.printf "%-10s %-12s %-8s %-10s %-22s %-8s %-6s %-8s\n"
+  Printf.printf "%-10s %-12s %-8s %-10s %-22s %-8s %-6s %-8s %-12s\n"
     "scheduler" "policy" "workers" "threshold"
-    "steal_ratio" "avg(s)" "sd(s)" "speedup";
-  Printf.printf "%s\n" (String.make 88 '-')
+    "steal_ratio" "avg(s)" "sd(s)" "speedup" "tasks/s";
+  Printf.printf "%s\n" (String.make 100 '-')
+
 
 let print_row scheduler policy workers threshold
-              steal_ratio avg_time sd_time speedup =
-  Printf.printf "%-10s %-12s %-8d %-10d %-22s %-8.4f %-6.4f %-8.2f\n"
-    scheduler policy workers threshold steal_ratio avg_time sd_time speedup
+              steal_ratio avg_time sd_time speedup throughput =
+  let tp_str = if throughput > 0.0
+               then Printf.sprintf "%.0f" throughput
+               else "-"
+  in
+  Printf.printf "%-10s %-12s %-8d %-10d %-22s %-8.4f %-6.4f %-8.2f %-12s\n"
+    scheduler policy workers threshold steal_ratio
+    avg_time sd_time speedup tp_str
 
 let run_sections ~runs ~seq_time ~worker_counts ~thresholds ~policies
                  ~run_ws ~run_naive =
@@ -60,12 +66,13 @@ let run_sections ~runs ~seq_time ~worker_counts ~thresholds ~policies
                          else float_of_int tot_steals
                               /. float_of_int tot_tasks
         in
+        let throughput = float_of_int tot_tasks /. avg_time in
         print_row "ws" policy_str w t
-          (Printf.sprintf "%d/%d(%.1f%%)"
+        (Printf.sprintf "%d/%d(%.1f%%)"
             tot_steals tot_tasks (ratio *. 100.0))
-          avg_time sd_time (seq_time /. avg_time)
-      ) thresholds
-    ) worker_counts;
+             avg_time sd_time (seq_time /. avg_time) throughput)
+      thresholds)
+    worker_counts;
     Printf.printf "%s\n" (String.make 88 '-')
   ) policies;
 
@@ -82,7 +89,9 @@ let run_sections ~runs ~seq_time ~worker_counts ~thresholds ~policies
     let sd_time_n  = std_dev naive_times in
     List.iter (fun t ->
       print_row "naive" "-" w t "-"
-        avg_time_n sd_time_n (seq_time /. avg_time_n)
+        avg_time_n sd_time_n (seq_time /. avg_time_n) 0.0
+        (* throughput=0.0 for naive — computed in plotting script
+           from ws task_count at same workers/threshold *)
     ) thresholds
   ) worker_counts;
-  Printf.printf "%s\n" (String.make 88 '-')
+  Printf.printf "%s\n" (String.make 100 '-')

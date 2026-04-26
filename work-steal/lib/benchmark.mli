@@ -4,7 +4,7 @@ val std_dev  : float array -> float
 
 val print_header : unit -> unit
 val print_row    : string -> string -> int -> int -> string
-                -> float -> float -> float -> unit
+                -> float -> float -> float -> float -> unit
 
 val run_sections :
   runs:int ->
@@ -16,3 +16,4 @@ val run_sections :
           -> threshold:int -> Scheduler.stats * float) ->
   run_naive:(num_workers:int -> float) ->
   unit
+
