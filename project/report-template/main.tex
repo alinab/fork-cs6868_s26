@@ -108,30 +108,9 @@ The goals of the project are as follows:
    \item To implement a user-level parallel task scheduler: This
     scheduler will take a recursively computable problem and divide it into
     a set of initial tasks to be distributed across parallel scheduler work loops.
-    Each work-loop in the parallel scheduler:
-    \begin{enumerate}
-        \item will be mapped to a deque (double-ended queue) to which these tasks
-            will be pushed into.
-        \item will spawn new subtasks that will be pushed into the local deque.
-            When the scheduler is ready, tasks will be popped from the same end
-            This is the bottom end of the deque.
-        \item can have tasks stolen from it by another deque/work-loop but only
-            from the end opposite to where tasks are being pushed and popped.
-            This end is called top. The challenge will be to ensure this occurs
-            correctly among possibly several other deques trying to steal tasks
-            from this work deque and to measure stealing for different classes of
-            problems (memory-bound vs compute bound).
-     \end{enumerate}
-     The scheduler will support a fork command to break down the problem tasks
-     into smaller-sized ones; to gather the computed results it will support
-     a join command.
-
-     Scheduler deques can steal from each other using different
-     strategies. The easiest strategy one can implement is randomly picking up
-     a domain other than itself. Another one, suggested in the project problem
-     statement, is a round-robin system where each domain attempts to steal
-     from the next one in a specified order. We will implement both and measure
-     outputs for both strategies.
+    The scheduler will support a fork command to break down the problem tasks
+    into smaller-sized ones; to gather the computed results it will support
+    a join command.
 
    \item To develop accurate models for the deque to use for checking correctness
        in the linearizability of the implementation using QCheck-Lin and
@@ -192,15 +171,14 @@ The goals of the project are as follows:
 \label{sec:background}
 % =============================================================================
 
-
-Definition: A deque is a double-ended queue which can exhibit LIFO (stack)
+A deque is a double-ended queue which can exhibit LIFO (stack)
 behaviour at one end and FIFO (queue) behaviour at another. Items can be pushed
 to and popped from one end (stack-like) whereas they can only be removed/popped
 from the other end in first-in-first-out order (queue-like).
 
 Any parallelizable problem needs to be broken down into smaller units or tasks
 in order to execute tasks in parallel thus providing an advantage over
-sequential execution.  In a multiprocessor system with several processes
+sequential execution. In a multiprocessor system with several processes
 (domains for parallelization in OCaml), these tasks can be spread across them
 for faster execution. Once the set of initial tasks is spread across processes,
 the processes can themselves create new subtasks to be executed locally by the
@@ -321,10 +299,6 @@ problem that occured in earlier work-stealing algorithms.
 % =============================================================================
 
 \subsection{Implementation}
-%Describe the implementation: key data structures, atomic operations used,
-%subtle invariants, and any design choices you had to make. Link to the
-%relevant files/commits in your GitHub repository.
-
 \subsubsection{Deque and Circular Array implementation}
 
 The implementation began with translating the code for deque operations
@@ -362,19 +336,6 @@ number of elements are less than 1/3rd of the array. This ensures that there's
 enough free space for newer items to be pushed to the deque and no need to
 expand the array soon after shrinking.
 
-The \cite{chase2005dynamic} algorithm requires the memory allocated to unused arrays to be
-reclaimed via a garbage collector; nothing extra need be done for this given
-OCaml's GC (garbage-collector). For work-stealing algorithms, where each process
-has its own deque and the upper bound for the maximum amount of memory needed by all
-deques can be often determined upfront, it can be more memory efficient to keep
-all the array buffers in a shared pool. If a process requires a bigger array for
-its deque, one is allocated from the pool; the same array can be returned to the
-pool when it shrinks to a smaller size. Assuming that the
-reclaimed buffers remain in the shared pool of buffers instead of the global
-heap, a deque may claim a buffer while there may be still some thieves
-referencing it (unlike a GC); this leads to tighter use of allocated memory.
-In the interests of finishing the project in time, we did not finish the attempt
-to implement this.
 
 \subsubsection{Scheduler implementation}
 
@@ -424,19 +385,6 @@ operation be successful. An empty deque or a failed steal attempt never
 actually return a value and must be treated as semantically equal results
 when concurrent operations on parallel domains are executed.
 
-Enforcing the owner/thief split among two test domains required dropping down to
-the internal \texttt{Lin\_domain.Make\_internal} functor and constructing a custom
-triple generator using \texttt{QCheck.Gen.triple} that routed owner commands
-(Push/Pop) exclusively to the sequential prefix and left domain, and thief
-commands (Steal) exclusively to the right domain.
-
-A further subtlety was that the \texttt{cmd} and \texttt{res} types had to be
-defined at the top level rather than inside the spec module to avoid OCaml's GADT
-type escaping errors. The final test uses \texttt{M.lin\_prop} for
-linearizability checking and \texttt{M.stress\_prop} for exception safety,
-both driven by the same \texttt{arb\_owner\_thief} generator that enforces the
-ownership invariant for deques.
-
 Running the test on a TSAN-enhanced opam switch did help trace and pinpoint
 an error (fixed in
 \href{https://github.com/alinab/fork-cs6868_s26/commit/5d917e0d987c3c1a6a507697c65432e02636c1ce}{5d917e0}).
@@ -473,14 +421,6 @@ The second hurdle was the same owner/thief constraint from the Lin test -
 causing \texttt{push\_bottom} and \texttt{pop\_bottom} to race concurrently
 and crash with index out of bounds. The fix was to use the \texttt{arb\_triple}
 with separate generators for each domain similar to the qcheck-lin test.
-A third subtlety was that \texttt{Abort} needed to map to \texttt{None} in the
-result representation since STM's sequential model has no concept of a lost race,
-and the postcond function needed to accept \texttt{None} as valid whenever the
-model predicted either an empty deque or a racing steal. The final test combines
-\texttt{STM\_sequential.Make} for
-single-domain value correctness, \texttt{STM\_domain.Make} with
-\texttt{arb\_triple} for parallel linearizability, and
-\texttt{stress\_prop\_par} for crash safety.
 
 % =============================================================================
 \section{Evaluation}
@@ -495,11 +435,7 @@ efficiency cores with a shared L2 cache. All measurements were taken using
 \texttt{OCaml 5.4} compiled to native code with optimisation flag \texttt{-O3}.
 
 Each benchmark configuration was run $10$ times after $3$ warm-up runs whose
-results were discarded. Warm-up runs allow the operating system scheduler to
-stabilise domain placement, the OCaml minor heap to reach a steady state, and
-frequently accessed data to populate the CPU cache before measurements begin.
-
-To handle noise, we report the mean wall-clock time $\bar{t}$, the standard
+results were discarded.  To handle noise, we report the mean wall-clock time $\bar{t}$, the standard
 deviation $\sigma$, and the minimum observed time $t_{\min}$ across the 10
 measured runs. Wall-clock time is measured using \texttt{Unix.gettimeofday}
 which has microsecond resolution on the test machine. Each run uses a freshly
@@ -642,11 +578,7 @@ Minor things such as suggesting OCaml's \texttt{Atomic.fetch\_and\_add} when
 \texttt{Atomic.incr} or \texttt{Atomic.decr} is perfectly fine.
 The non-adaptive model for Sonnet made a mistake when asked to generate an example
 from the paper - it thought \texttt{pop\_bottom} to occur from the top index
-of the deque, an impossibility. In another instance, while trying to modify some code in the
-work-stealing scheduler, it duplicated an \texttt{Array} function which led to a
-significant debugging effort. In a subsequent back-and-forth with Claude to
-understand where the error could have cropped up, it itself helped pinpoint the
-error and so helped fix it.
+of the deque, an impossibility.
 
 \paragraph{What was surprising.}
 The patience with which it would help think through something. This is our first
@@ -675,68 +607,40 @@ in the first place.
 \label{sec:conclusions}
 % =============================================================================
 
-%Answer the research question stated in \cref{sec:goals}. Summarise the main
-%findings. State the limitations of your work honestly. Suggest what you
-%would do next given more time.
+Work-stealing's advantage is most pronounced for memory-bound
+unbalanced workloads such as parallel mergesort, where dynamic rebalancing
+avoids the mutex contention that cripples the naive scheduler at high worker
+counts. For compute-bound, balanced workloads such as Fibonacci and prime map,
+the naive scheduler is surprisingly competitive — and superior at very high
+worker counts — because workers rarely go idle and the mutex is rarely contested.
 
-Work-stealing's advantage is most
-pronounced for \emph{memory-bound, structurally unbalanced} workloads
-such as parallel mergesort, where the dynamic rebalancing of the
-deque-per-worker design avoids the mutex contention that cripples the
-naive scheduler at high worker counts. For \emph{compute-bound, balanced}
-workloads such as parallel fibonacci and prime map, the naive scheduler
-is surprisingly competitive — and superior at very high worker counts —
-because the balanced task distribution means workers rarely go idle and
-the mutex is rarely contested.
+The steal ratio data validates the algorithm's theoretical foundation: across
+all benchmarks and configurations, between 0\% and 27\% of tasks were stolen,
+meaning at least 73\% executed locally without any cross-domain synchronisation.
+\texttt{push\_bottom} and \texttt{pop\_bottom} are lock-free on the owner's
+local deque; the expensive CAS is only invoked during a steal or when the last
+element is contested.
 
-The steal ratio data validates the theoretical foundation of the
-algorithm. Across all three benchmarks and all configurations, between
-0\% and 27\% of tasks were stolen — meaning at least 73\% of all tasks
-were executed locally without any cross-domain synchronisation. The deque
-is efficient because it optimises the common case: ${push\_bottom}
-and ${pop\_bottom} are lock-free operations on the owner's local
-deque, and the expensive CAS instruction is only invoked during the less
-frequent steal operation or when the last element of the deque is contested.
+Random victim selection is more stable than round-robin across all benchmarks.
+At high worker counts round-robin's deterministic cycling causes contention when
+multiple workers target the same victim, leading to higher variance and
+occasional livelock under coarse task granularity.
 
-The comparison of steal policies shows that random victim selection is
-more stable than round-robin across all benchmarks, particularly at high
-worker counts where round-robin's deterministic cycling can cause
-contention when multiple workers target the same victim simultaneously.
-Round-robin does achieve higher speedup for fibonacci at 16 workers, but
-at the cost of higher variance and occasional deadlock under coarse task
-granularity.
+Task granularity has a consistent effect on performance: fine-grained tasks
+increase parallelism and throughput but add scheduler overhead per unit of
+computation. The crossover threshold below which sequential outperforms parallel
+is approximately \texttt{threshold=1000} for mergesort and
+\texttt{threshold=20} for Fibonacci, confirming that minimum viable task size
+depends heavily on computational intensity.
 
-Task granularity has a significant and consistent effect on performance.
-Fine-grained tasks generate more parallelism and higher task throughput
-but also more scheduler overhead per unit of computation. The crossover
-threshold — below which sequential execution outperforms parallel — is
-approximately ${threshold=1000} for mergesort and
-${threshold=20} for fibonacci, confirming that the minimum viable
-task size depends heavily on the computational intensity of each task.
-
-Finally, the OCaml 5 ${Atomic} module and ${Domain} library
-provide sufficient primitives to implement a correct lock-free deque
-without resorting to unsafe operations, though ThreadSanitizer revealed
-subtle data races in early versions that required careful ordering of
-array publication and index updates. The OCaml GC (Garbage Collector) eliminates the
-need for the
-manual memory reclamation protocol described in Section 4 of the
-paper~\cite{chase2005dynamic}, significantly simplifying the
-implementation at the cost of occasional GC pauses under heavy allocation.
-
-Has we been given more time, it would have been useful to use profiling
-tools to understand cache and memory use to understand threshold tipping points
-as well as look at a few more problems for benchmarking. We would like to do so
-even after the formal submission of this project report as an addition to this.
-
-Also, as an extension of this work, it would be most interesting to
-implement a shared pool of buffers instead of letting the OCaml GC manage
-memory.  A side-by-side implementation of a scheduler with such a buffer pool
-in OCaml as well as in a language like Rust (using an existing implemention such as
-\href{https://docs.rs/crossbeam-deque/latest/crossbeam_deque/}{crossbeam} or
-creating one from scratch) would really help learn much more about
-acquire-release semantics as well as give a chance to compare implementations in
-languages with different memory models.
+Given more time, profiling tools for cache and memory analysis would help
+pinpoint threshold tipping points, and additional benchmarks would broaden the
+evaluation. As a natural extension, implementing a shared buffer pool — and
+comparing it against an equivalent Rust implementation using
+\href{https://docs.rs/crossbeam-deque/latest/crossbeam_deque/}{\texttt{crossbeam}}
+or a from-scratch implementation — would help us understand acquire-release semantics
+much better as well as the and the practical differences between
+garbage-collected and manually managed memory models.
 
 % =============================================================================
 \section*{Contributions}
