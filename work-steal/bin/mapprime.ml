@@ -119,7 +119,6 @@ let run_experiment ~n ~runs =
   let seq_sd   = Benchmark.std_dev seq_times in
   Printf.printf "sequential baseline: %.4fs +/- %.4fs\n\n%!" seq_time seq_sd;
 
-  (* single warmup pass *)
   Printf.printf "Warming up...\n%!";
   for _ = 1 to warmup_runs do
     ignore (run_ws ~num_workers:1 ~steal_policy:Scheduler.Random
